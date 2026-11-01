@@ -331,7 +331,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v2.3 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v2.4 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
 </div></header>
 
@@ -355,7 +355,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "2.3";
+const VERSION = "2.4";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -474,7 +474,7 @@ function occurrences(p,ym){
     while(t<=b){ res.push(isoUTC(t)); t+=step; }
   } else { const k=FREQ_STEP[p.freq]||1; if(diff%k===0) res.push(`${ym}-${pad(Math.min(sd,dim))}`); }
   if(p.end) res=res.filter(d=>d<=p.end);
-  return res.map(d=>{ let label=p.label; if(p.special==="birthday"){ const s=subOf(p.cat,p.sub); const a=s?ageOn(s.birth,d):null; if(a!=null) label+=` · ${a} ans`; } return {p,date:d,key:p.id+"@"+d,label}; });
+  return res.map(d=>{ let label=p.label; if(p.special==="birthday"){ const s=subOf(p.cat,p.sub); const a=s?ageOn(s.birth,d):null; if(a!=null) label+=` · ${a} ans`; } return {p,date:d,key:p.id+"@"+d,label,amount:p.amount}; });
 }
 function planTransferAmounts(p){
   const cross=curOf(p.from)!==curOf(p.to);
@@ -483,7 +483,7 @@ function planTransferAmounts(p){
 }
 function occAsTx(o){ const p=o.p;
   if(p.kind==="transfer") return Object.assign({kind:"transfer",from:p.from,to:p.to,date:o.date,nature:"fixe"},planTransferAmounts(p));
-  return {kind:p.kind,acc:p.acc,amount:p.amount,date:o.date,nature:p.nature,cat:p.cat,persons:personsOf(p),personOther:p.personOther};
+  return {kind:p.kind,acc:p.acc,amount:o.amount!=null?o.amount:p.amount,date:o.date,nature:p.nature,cat:p.cat,persons:personsOf(p),personOther:p.personOther};
 }
 function txFlows(t){
   if(t.kind==="income") return [[t.acc,+t.amount]];
@@ -514,6 +514,9 @@ const zoneNet = (X,cur) => cfg.accounts.filter(a=>a.cur===cur).reduce((s,a)=>s+(
 function calcMonth(ym){
   if(memo.has(ym)) return memo.get(ym);
   const occ=allPlans().flatMap(p=>occurrences(p,ym)).sort((a,b)=>a.date<b.date?-1:1);
+  const est=(cfg.varEst||{})[ym]||{}, seen=new Set();
+  occ.forEach(o=>{ if(isVarExp(o.p)&&est[o.p.id]!=null){ o.amount=seen.has(o.p.id)?0:+est[o.p.id]; seen.add(o.p.id); o.est=true; } });
+  Object.keys(est).filter(k=>k.startsWith("c:")).forEach(k=>{ const [cat,acc]=k.slice(2).split("|"); if(!accById(acc)) return; occ.push({p:{id:"est-"+k,virtual:true,kind:"expense",nature:"variable",label:cat,amount:+est[k],acc,cat,persons:[],freq:"once",date:ym+"-01"},date:ym+"-01",key:"est-"+k+"@"+ym,label:cat,amount:+est[k],est:true}); });
   const tx=effTx(ym).slice().sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
   let sf=0,st=0;
   tx.forEach(t=>{ if(t.kind==="transfer"&&curOf(t.from)==="CHF"&&curOf(t.to)==="EUR"){ sf+=t.amtFrom; st+=t.amtTo; } });
@@ -525,10 +528,10 @@ function calcMonth(ym){
   const occKeys=new Set(occ.map(o=>o.key));
   const pointRows=occ.filter(o=>!isVarExp(o.p)).map(o=>{
     const ts=linked[o.key]||[]; const actual=ts.reduce((s,t)=>s+(t.kind==="transfer"?t.amtFrom:t.amount),0);
-    return {o,ts,planned:o.p.amount,actual,cur:curOf(o.p.kind==="transfer"?o.p.from:o.p.acc),done:ts.length>0,late:!ts.length&&o.date<TODAY};
+    return {o,ts,planned:o.amount!=null?o.amount:o.p.amount,actual,cur:curOf(o.p.kind==="transfer"?o.p.from:o.p.acc),done:ts.length>0,late:!ts.length&&(o.p.noDate?lastDay(ym)<TODAY:o.date<TODAY)};
   });
   const vmap={}; const vget=(cat,acc)=>{ const k=cat+"|"+acc; return vmap[k]=vmap[k]||{key:k,cat,acc,planned:0,actual:0,tx:[],labels:[],bulk:null}; };
-  occ.filter(o=>isVarExp(o.p)).forEach(o=>{ const v=vget(o.p.cat,o.p.acc); v.planned+=o.p.amount; v.labels.push(o.label); });
+  occ.filter(o=>isVarExp(o.p)).forEach(o=>{ const v=vget(o.p.cat,o.p.acc); v.planned+=(o.amount!=null?o.amount:o.p.amount); v.labels.push(o.label); });
   tx.filter(isVarExp).forEach(t=>{ const v=vget(t.cat,t.acc); v.actual+=t.amount; v.tx.push(t); if(t.bulk) v.bulk=t; });
   const varRows=Object.values(vmap).sort((a,b)=>b.planned-a.planned||b.actual-a.actual);
   const unplanned=tx.filter(t=>!isVarExp(t)&&!(t.link&&occKeys.has(t.link)));
@@ -891,7 +894,7 @@ function viewMonth(){
 }
 function pointRow(r,acc){
   const p=r.o.p, cur=acc?curOf(acc):r.cur;
-  const meta=[shortDate(r.o.date),p.kind==="transfer"?`${accName(p.from)} → ${accName(p.to)}`:accName(p.acc),p.kind!=="transfer"?personLabel(p):null].filter(Boolean).join(" · ");
+  const meta=[p.noDate||r.o.est?"dans le mois":shortDate(r.o.date),p.kind==="transfer"?`${accName(p.from)} → ${accName(p.to)}`:accName(p.acc),p.kind!=="transfer"?personLabel(p):null].filter(Boolean).join(" · ");
   let right,st;
   const plannedV=acc?flowFor(occAsTx(r.o),acc):r.planned, actualV=acc?r.ts.reduce((s,t)=>s+flowFor(t,acc),0):r.actual;
   const F=acc?(v=>sfmt(v,cur)):(v=>fmt(v,cur));
@@ -910,7 +913,7 @@ function varRow(v){
   const cur=curOf(v.acc), pct=v.planned>0?v.actual/v.planned:(v.actual>0?1.01:0), rest=v.planned-v.actual;
   const info=v.bulk?"total saisi":`${v.tx.length} opération${v.tx.length>1?"s":""}`;
   const lab=[...new Set(v.labels.filter(l=>l!==v.cat))].join(", ");
-  return `<button class="row" data-act="openBulk"><span class="cdot" style="--c:${accColor(v.acc)}"></span><div class="main"><div class="l">${esc(v.cat)} ${v.planned===0?'<span class="chip warn">sans budget</span>':""}</div><div class="m">${esc([accName(v.acc),info,lab].filter(Boolean).join(" · "))}</div>
+  return `<button class="row" data-act="openEst"><span class="cdot" style="--c:${accColor(v.acc)}"></span><div class="main"><div class="l">${esc(v.cat)} ${v.planned===0?'<span class="chip warn">sans budget</span>':""}</div><div class="m">${esc([accName(v.acc),info,lab].filter(Boolean).join(" · "))}</div>
     <div class="bar"><i class="${pct>1?"over":pct>.85?"near":""}" style="width:${Math.min(100,pct*100).toFixed(1)}%"></i></div></div>
     <div class="amt"><b>${fmt(v.actual,cur,0)} <span class="mut" style="font-weight:600">/ ${fmt(v.planned,cur,0)}</span></b><small class="${rest<0?"neg":""}">${rest<0?"dépassé de "+fmt(-rest,cur,0):"reste "+fmt(rest,cur,0)}</small></div></button>`;
 }
@@ -998,7 +1001,7 @@ function viewPlans(){
     const list=ps.filter(f).sort((a,b)=>a.date.slice(5)<b.date.slice(5)?-1:1); if(!list.length) return;
     h+=`<section class="block"><div class="bh"><h2>${t}</h2><div class="t">${list.length} élément${list.length>1?"s":""}</div></div><div class="card list">${list.map(p=>{
       const a=p.kind==="transfer"?p.from:p.acc, cur=curOf(a), fq=freqOf(p.freq), ended=p.end&&p.end<TODAY;
-      const when=p.virtual?(p.special==="birthday"?"Chaque année le "+shortDate(p.date):"En décembre"):fq[1]+(p.freq==="once"?" · "+shortDate(p.date):FREQ_STEP[p.freq]?" · le "+(+p.date.slice(8)):"");
+      const when=p.virtual?(p.special==="birthday"?"Chaque année le "+shortDate(p.date):"En décembre"):fq[1]+(p.freq==="once"?" · "+shortDate(p.date):FREQ_STEP[p.freq]?(p.noDate?" · sans date":" · le "+(+p.date.slice(8))):"");
       const meta=[when,p.kind==="transfer"?`${accName(p.from)} → ${accName(p.to)}`:accName(p.acc),p.kind!=="transfer"?catLabel(p.cat,p.sub,p.sub2):null,p.kind!=="transfer"?personLabel(p):null].filter(Boolean).join(" · ");
       return `<div class="row"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)} ${ended?'<span class="chip">terminé</span>':""}</div><div class="m">${esc(meta)}</div></div><div class="amt"><b>${fmt(p.amount,cur)}</b>${fq[2]!==1&&fq[2]>0?`<small>≈ ${fmt(p.amount*fq[2],cur,0)}/mois</small>`:""}</div></div>`;}).join("")}</div></section>`;
   });
@@ -1028,7 +1031,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3><button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,security:sheetSecurity,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,est:sheetEst,security:sheetSecurity,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1043,7 +1046,7 @@ const accChips=(f,filter)=>`<div class="chips">${cfg.accounts.filter(filter||(()
 /* ----- assistant pas à pas ----- */
 function wizSteps(d){ if(d.kind==="transfer") return ["kind","accounts","amount","recap"]; const s=["kind"]; if(d.kind==="expense") s.push("nature"); return s.concat(["cat","sub"],needSub2(d)?["sub2"]:[],["amount","recap"]); }
 function newWizard(mode,kind){
-  const d={mode,step:"kind",kind:"",nature:"",cat:"",sub:"",amount:"",acc:"cc",date:mode==="tx"?(ui.ym===CUR_YM?TODAY:ui.ym+"-01"):CUR_YM+"-05",persons:[],personOther:"",sub2:"",label:"",link:"",from:"chf",to:"cc",amtFrom:"",amtTo:"",fee:"",freq:"monthly",end:""};
+  const d={mode,step:"kind",kind:"",nature:"",cat:"",sub:"",amount:"",acc:"cc",date:mode==="tx"?(ui.ym===CUR_YM?TODAY:ui.ym+"-01"):CUR_YM+"-05",persons:[],personOther:"",sub2:"",noDate:"",label:"",link:"",from:"chf",to:"cc",amtFrom:"",amtTo:"",fee:"",freq:"monthly",end:""};
   if(!accById(d.acc)) d.acc=cfg.accounts[0].id;
   if(kind){ applyKind(d,kind); d.step=wizSteps(d)[1]; }
   return d;
@@ -1133,7 +1136,10 @@ function sheetWizard(s){
       if(ps.includes("autre")) h+=fld("Nom de l'autre personne",inp("personOther","text",'placeholder="Mamie, collègue, association…"'));
     }
     if(d.mode==="tx") h+=fld(d.kind==="expense"?"Date":"Date du virement",inp("date","date"));
-    else { h+=`<div class="grid2">${fld("Fréquence",sel("freq",FREQS.map(f=>[f[0],f[1]])))}${fld(d.freq==="once"?"Date":d.kind==="expense"?"1er prélèvement":"1er virement",inp("date","date"))}</div>`; if(d.freq!=="once") h+=fld("Date de fin (facultatif)",inp("end","date"),"Laisse vide si ça continue."); }
+    else if(d.kind==="expense"&&d.noDate){ h+=fld("Date",segF("noDate",[["","Date précise"],["1","Sans date"]]),"Pour une dépense qui n'a pas de jour fixe (carburant, courses…). Elle compte pour le mois entier.");
+      h+=`<div class="grid2">${fld("Fréquence",sel("freq",FREQS.filter(f=>!["weekly","biweekly"].includes(f[0])).map(f=>[f[0],f[1]])))}${fld(d.freq==="once"?"Mois concerné":"À partir du mois de",(()=>{ d.date=(isISO(d.date)?d.date:TODAY).slice(0,7)+"-01"; const opts=[]; for(let i=-12;i<=24;i++){ const ym=addMonths(CUR_YM,i); opts.push([ym+"-01",monthName(ym)+" "+ym.slice(0,4)]); } if(!opts.some(o=>o[0]===d.date)) opts.unshift([d.date,monthName(d.date.slice(0,7))+" "+d.date.slice(0,4)]); return sel("date",opts); })())}</div>`; }
+    else { if(d.kind==="expense") h+=fld("Date",segF("noDate",[["","Date précise"],["1","Sans date"]]));
+      h+=`<div class="grid2">${fld("Fréquence",sel("freq",FREQS.map(f=>[f[0],f[1]])))}${fld(d.freq==="once"?"Date":d.kind==="expense"?"1er prélèvement":"1er virement",inp("date","date"))}</div>`; if(d.freq!=="once") h+=fld("Date de fin (facultatif)",inp("end","date"),"Laisse vide si ça continue."); }
     h+=fld("Libellé (facultatif)",inp("label","text",`placeholder="${d.kind==="transfer"?"Transfert mensuel":d.cat?esc(catLabel(d.cat,d.sub,d.sub2)):""}"`));
     const po=pendingOcc(d);
     if(po.length||d.link) h+=fld("Correspond à une prévision",sel("link",[["","Aucune (hors prévision)"],...po.map(r=>[r.o.key,`${r.o.label} · ${shortDate(r.o.date)} · ${fmt(r.planned,r.cur)}`])]),"La prévision choisie sera marquée comme pointée.");
@@ -1151,7 +1157,7 @@ function sheetWizard(s){
       rows+=L("Catégorie",esc(catLabel(d.cat,d.sub,d.sub2)),"cat");
       rows+=L("Compte",`<span class="cdot" style="--c:${accColor(d.acc)};margin-right:6px"></span>${esc(accName(d.acc))}`,"amount");
       rows+=L("Pour",esc(personLabel(d)||"—"),"amount"); }
-    rows+= d.mode==="tx"?L("Date",longDate(d.date),"amount"):L("Fréquence",`${freqOf(d.freq)[1]} · dès le ${longDate(d.date)}${d.end&&d.freq!=="once"?" jusqu'au "+longDate(d.end):""}`,"amount");
+    rows+= d.mode==="tx"?L("Date",longDate(d.date),"amount"):L("Fréquence",d.kind==="expense"&&d.noDate?`${freqOf(d.freq)[1]} · sans date · dès ${monthName(d.date.slice(0,7))} ${d.date.slice(0,4)}`:`${freqOf(d.freq)[1]} · dès le ${longDate(d.date)}${d.end&&d.freq!=="once"?" jusqu'au "+longDate(d.end):""}`,"amount");
     rows+=L("Libellé",esc(d.label||(d.kind==="transfer"?`${accName(d.from)} → ${accName(d.to)}`:catLabel(d.cat,d.sub,d.sub2))),"amount");
     if(d.mode==="tx"&&d.link){ const o=findOcc(d.link); rows+=L("Prévision",o?esc(o.label)+" · "+shortDate(o.date):"—","amount"); }
     h+=`<div class="q">Récapitulatif</div><div class="recap"><div class="tot"><span class="eyebrow">${KIND_L[d.kind]}${d.mode==="plan"?" prévu":""}</span><b class="${d.kind==="income"?"pos":""}">${amtTxt}</b></div>${rows}</div><p class="note">Touche une ligne pour la modifier.</p>`;
@@ -1171,7 +1177,7 @@ function txToDraft(t){
   return {mode:"tx",step:"recap",id:t.id,kind:t.kind,nature:t.nature||"fixe",cat:t.cat||"",sub:t.sub||"",sub2:t.sub2||"",amount:numStr(t.amount),acc:t.acc||"cc",date:t.date,persons:personsOf(t).slice(),personOther:t.personOther||"",label:t.label||"",link:t.link||"",from:t.from||"chf",to:t.to||"cc",amtFrom:numStr(t.amtFrom),amtTo:numStr(t.amtTo),fee:numStr(t.fee),bulk:!!t.bulk,freq:"monthly",end:""};
 }
 function planToDraft(p){
-  return {mode:"plan",step:"recap",id:p.id,kind:p.kind,nature:p.nature||"fixe",cat:p.cat||"",sub:p.sub||"",amount:p.kind==="transfer"?"":numStr(p.amount),amtFrom:p.kind==="transfer"?numStr(p.amount):"",acc:p.acc||"cc",date:p.date,persons:personsOf(p).slice(),personOther:p.personOther||"",sub2:p.sub2||"",label:p.label||"",link:"",from:p.from||"chf",to:p.to||"cc",amtTo:"",fee:"",freq:p.freq||"monthly",end:p.end||""};
+  return {noDate:p.noDate?"1":"",mode:"plan",step:"recap",id:p.id,kind:p.kind,nature:p.nature||"fixe",cat:p.cat||"",sub:p.sub||"",amount:p.kind==="transfer"?"":numStr(p.amount),amtFrom:p.kind==="transfer"?numStr(p.amount):"",acc:p.acc||"cc",date:p.date,persons:personsOf(p).slice(),personOther:p.personOther||"",sub2:p.sub2||"",label:p.label||"",link:"",from:p.from||"chf",to:p.to||"cc",amtTo:"",fee:"",freq:p.freq||"monthly",end:p.end||""};
 }
 function findTx(id){ for(const ym in TX){ const i=TX[ym].findIndex(t=>t.id===id); if(i>=0) return {ym,i,t:TX[ym][i]}; } return null; }
 function removeTx(id,docs){ const f=findTx(id); if(f){ TX[f.ym].splice(f.i,1); docs.add("tx-"+f.ym); } }
@@ -1179,7 +1185,8 @@ function upsertTx(t,docs){ removeTx(t.id,docs); const ym=t.date.slice(0,7); (TX[
 function wzSave(s){
   const d=s.d, err=validateDraft(d); if(err){ s.err=err; renderSheet(); return; }
   if(d.mode==="plan"){
-    const p={id:d.id||uid8(),kind:d.kind,freq:d.freq,date:d.date,end:d.freq==="once"?"":(d.end||"")};
+    const nd=d.kind==="expense"&&!!d.noDate;
+    const p={id:d.id||uid8(),kind:d.kind,freq:nd&&["weekly","biweekly"].includes(d.freq)?"monthly":d.freq,date:nd?d.date.slice(0,7)+"-01":d.date,end:d.freq==="once"?"":(d.end||""),noDate:nd||undefined};
     if(d.kind==="transfer"){ Object.assign(p,{from:d.from,to:d.to,amount:r2(num(d.amtFrom)),nature:"fixe",persons:[],label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
     else Object.assign(p,{acc:d.acc,cat:d.cat,sub:d.sub||"",sub2:d.sub2||"",amount:r2(num(d.amount)),persons:(d.persons||[]).slice(),personOther:(d.persons||[]).includes("autre")?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub,d.sub2)}); delete p.person;
     const i=cfg.plans.findIndex(x=>x.id===p.id); if(i>=0) cfg.plans[i]=p; else cfg.plans.push(p);
@@ -1255,6 +1262,41 @@ function sheetIncomes(s){
   h+=`<div class="actions"><button class="btn block" data-act="openIncomeEntry">Saisir salaire et allocations</button><button class="btn block" data-act="otherIncome">+ Autre revenu</button></div>`;
   return h;
 }
+function estRows(ym){
+  const c=calcMonth(ym), pc=calcMonth(addMonths(ym,-1)), est=(cfg.varEst||{})[ym]||{}, rows=[], seen=new Set();
+  allPlans().filter(p=>isVarExp(p)&&occurrences(p,ym).length).forEach(p=>{ if(seen.has(p.id)) return; seen.add(p.id);
+    const def=occurrences(p,ym).reduce((x,o)=>x+o.amount,0);
+    rows.push({key:p.id,label:occurrences(p,ym)[0].label,cat:p.cat,acc:p.acc,def,val:est[p.id]}); });
+  Object.keys(est).filter(k=>k.startsWith("c:")).forEach(k=>{ const [cat,acc]=k.slice(2).split("|"); rows.push({key:k,label:cat,cat,acc,def:0,val:est[k]}); });
+  rows.forEach(r=>{ const v=c.varRows.find(x=>x.cat===r.cat&&x.acc===r.acc), pv=pc.varRows.find(x=>x.cat===r.cat&&x.acc===r.acc); r.actual=v?v.actual:0; r.last=pv?pv.actual:0; });
+  return rows;
+}
+function openEst(){
+  const ym=ui.ym, rows=estRows(ym), d={};
+  rows.forEach(r=>{ d["e:"+r.key]=r.val!=null?numStr(r.val):""; });
+  d.addCat=(catsOf("expense").find(x=>!x.special)||{}).name||""; d.addAcc=eurMain();
+  pushOrOpen({type:"est",ym,d,extra:[]});
+}
+function sheetEst(s){
+  const d=s.d, rows=estRows(s.ym).concat(s.extra.filter(k=>!estRows(s.ym).some(r=>r.key===k)).map(k=>{ const [cat,acc]=k.slice(2).split("|"); return {key:k,label:cat,cat,acc,def:0,actual:0,last:0}; }));
+  let h=sheetHead("Prévisions des dépenses variables",`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
+  h+=`<p class="note" style="margin:0 0 10px">Indique combien tu penses dépenser ce mois-ci pour chaque poste. Laisse vide pour garder le montant habituel (en gris).</p>`;
+  if(!rows.length) h+=`<p class="note">Aucune dépense variable prévue. Ajoute un poste ci-dessous, ou crée un budget variable dans Réglages › Créer un événement.</p>`;
+  h+=`<div class="card pad" style="padding-top:2px;padding-bottom:2px">${rows.map(r=>{ const cur=curOf(r.acc);
+    return `<div class="vrow"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.label)}</b><small>${esc(accName(r.acc))}${r.def?` · habituel ${fmt(r.def,cur,0)}`:""}</small><small>dépensé ${fmt(r.actual||0,cur,0)} · mois passé ${fmt(r.last||0,cur,0)}</small></div>${inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${r.def?numStr(r.def):"0"}" aria-label="Prévision ${esc(r.label)}"`)}</div>`; }).join("")}</div>`;
+  h+=`<h4>Ajouter un poste pour ce mois</h4><div class="grid2">${fld("Catégorie",sel("addCat",catsOf("expense").map(x=>[x.name,x.name])))}${fld("Compte",sel("addAcc",cfg.accounts.map(a=>[a.id,a.name])))}</div><div class="actions"><button class="btn sm" data-act="estAdd">Ajouter</button></div>`;
+  if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
+  h+=`<div class="actions"><button class="btn primary block" data-act="saveEst">Enregistrer les prévisions</button></div>`;
+  return h;
+}
+function saveEst(s){
+  const d=s.d, ym=s.ym, keys=Object.keys(d).filter(k=>k.startsWith("e:")).map(k=>k.slice(2));
+  for(const k of keys){ const v=String(d["e:"+k]||"").trim(); if(v&&!(num(v)>=0)){ s.err="Un montant n'est pas valide."; return renderSheet(); } }
+  cfg.varEst=cfg.varEst||{}; const m=Object.assign({},cfg.varEst[ym]||{});
+  keys.forEach(k=>{ const v=String(d["e:"+k]||"").trim(); if(v==="") delete m[k]; else m[k]=r2(num(v)); });
+  if(Object.keys(m).length) cfg.varEst[ym]=m; else delete cfg.varEst[ym];
+  popSheet(); changed(["config"]); if(stack.length) renderSheet(); toast("Prévisions enregistrées");
+}
 function openExpenses(){ openSheet({type:"expenses",ym:ui.ym}); }
 function sheetExpenses(s){
   const c=calcMonth(s.ym);
@@ -1265,7 +1307,7 @@ function sheetExpenses(s){
   const cats=Object.keys(c.A.cats).sort((a,b)=>c.A.cats[b]-c.A.cats[a]), mx=cats.length?c.A.cats[cats[0]]:1;
   if(cats.length) h+=`<h4>Par catégorie</h4><div class="card pad" style="padding-top:4px;padding-bottom:4px">${cats.map(k=>`<div class="catbar"><b style="font-weight:700">${esc(k)}</b><span>${fmt(c.A.cats[k],"EUR",0)}${c.P.cats[k]?` <span class="mut">/ ${fmt(c.P.cats[k],"EUR",0)}</span>`:""}</span><div class="bar"><i style="width:${(c.A.cats[k]/mx*100).toFixed(1)}%;background:var(--title)"></i></div></div>`).join("")}</div>`;
   h+=`<h4>Toutes les dépenses (${list.length})</h4>${list.length?`<div class="card list">${list.map(t=>txRow(t)).join("")}</div>`:`<p class="note">Aucune dépense saisie ce mois-ci.</p>`}`;
-  h+=`<div class="actions"><button class="btn block" data-act="openBulk">Saisir les totaux variables</button></div>`;
+  h+=`<div class="actions"><button class="btn primary block" data-act="openEst">Prévisions des dépenses variables</button></div>`;
   return h;
 }
 function openChf(){
@@ -1408,7 +1450,7 @@ function sheetPlans(){
   const groups=[["Revenus",p=>p.kind==="income"],["Dépenses fixes",p=>p.kind==="expense"&&p.nature!=="variable"],["Dépenses variables (budgets)",p=>p.kind==="expense"&&p.nature==="variable"],["Virements",p=>p.kind==="transfer"]];
   groups.forEach(([t,f])=>{ const list=cfg.plans.filter(f); if(!list.length) return;
     h+=`<h4>${t}</h4><div class="card list">${list.map(p=>{ const a=p.kind==="transfer"?p.from:p.acc, fq=freqOf(p.freq);
-      return `<button class="row" data-act="editPlan" data-id="${p.id}"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)}</div><div class="m">${esc(fq[1]+(FREQ_STEP[p.freq]?" · le "+(+p.date.slice(8)):"")+" · "+(p.kind==="transfer"?accName(p.from)+" → "+accName(p.to):accName(p.acc)))}</div></div><div class="amt"><b>${fmt(p.amount,curOf(a))}</b></div></button>`; }).join("")}</div>`; });
+      return `<button class="row" data-act="editPlan" data-id="${p.id}"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)}</div><div class="m">${esc(fq[1]+(FREQ_STEP[p.freq]?(p.noDate?" · sans date":" · le "+(+p.date.slice(8))):"")+" · "+(p.kind==="transfer"?accName(p.from)+" → "+accName(p.to):accName(p.acc)))}</div></div><div class="amt"><b>${fmt(p.amount,curOf(a))}</b></div></button>`; }).join("")}</div>`; });
   if(!cfg.plans.length) h+=`<p class="note">Aucun événement pour l'instant.</p>`;
   h+=`<p class="note">Les anniversaires et Noël se règlent dans Gérer les catégories.</p><div class="actions"><button class="btn primary block" data-act="newPlan">Créer un événement</button></div>`;
   return h;
@@ -1521,7 +1563,7 @@ document.addEventListener("click",async e=>{
       else if(f==="cat"){ if(d.cat!==v){ d.sub=""; d.link=""; } d.cat=v; const c=catByName(v); if(c&&c.special&&c.acc&&accById(c.acc)) d.acc=c.acc; }
       else if(f==="sub"){ if(d.sub!==v) d.sub2=""; d.sub=v; applySub(d); }
       else if(f==="sub2"){ d.sub2=v; }
-      else { d[f]=v; if(f==="nature"&&v==="variable") d.link=""; }
+      else { d[f]=v; if(f==="nature"&&v==="variable") d.link=""; if(f==="nature"&&d.mode==="plan"&&!d.id) d.noDate=v==="variable"?"1":""; }
       wzAdvance(s); renderSheet(); break; }
     case "wzBackHead": { const st=wizSteps(s.d), i=st.indexOf(s.d.step); if(i>0&&!(s.d.id&&s.d.step==="recap")){ s.d.step=st[i-1]; s.err=""; renderSheet(); } else popSheet(); break; }
     case "wzBack": { const st=wizSteps(s.d), i=st.indexOf(s.d.step); s.d.step=st[Math.max(0,i-1)]; s.err=""; renderSheet(); break; }
@@ -1554,6 +1596,9 @@ document.addEventListener("click",async e=>{
     case "saveIncome": saveIncome(s); break;
     case "openBulk": if(loading()) break; openBulk(); break;
     case "openExpenses": openExpenses(); break;
+    case "openEst": if(loading()) break; openEst(); break;
+    case "saveEst": saveEst(s); break;
+    case "estAdd": { const k="c:"+s.d.addCat+"|"+s.d.addAcc; if(!s.d.addCat) break; if(!s.extra.includes(k)&&!estRows(s.ym).some(r=>r.key===k)){ s.extra.push(k); s.d["e:"+k]=""; } renderSheet(); break; }
     case "openChf": openChf(); break;
     case "saveChf": saveChf(s); break;
     case "newChf": { const c=calcMonth(s.ym); stack[stack.length-1]={type:"chf",ym:s.ym,d:{sent:"",recv:"",date:s.ym===CUR_YM?TODAY:s.ym+"-01",link:""},others:chfTransfers(c).done.map(x=>x.id)}; renderSheet(); break; }
