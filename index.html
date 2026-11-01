@@ -243,6 +243,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .sumgrid div{background:var(--surface-2);border-radius:12px;padding:10px 12px}
 .sumgrid span{display:block;font-size:12px;color:var(--muted)}
 .sumgrid b{font-size:16px}
+.cat{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;font-weight:700}
+.cat button{width:22px;height:22px;border-radius:50%;border:0;background:var(--line);display:grid;place-items:center;padding:0;font-size:13px;line-height:1}
 .subed{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
 .subed:first-child{border-top:0}
 .subed .top{display:flex;gap:8px;align-items:center}
@@ -304,8 +306,8 @@ input.picker{cursor:pointer;caret-color:transparent}
 .calc-expr{font-size:15px;color:var(--muted);min-height:20px;word-break:break-all}
 .calc-res{font-family:var(--display);font-size:40px;color:var(--title);line-height:1.1;word-break:break-all}
 .calc-res.err{color:var(--neg)}
-.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.calc-keys button{height:56px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-size:24px;font-weight:500;color:var(--ink);padding:0}
+.calc-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.calc-keys button{height:58px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-size:24px;font-weight:500;color:var(--ink);padding:0}
 .calc-keys button.op{background:var(--surface-2);color:var(--title);font-weight:600}
 .calc-keys button.fn{font-family:var(--body);font-size:15px;font-weight:800;color:var(--muted);background:var(--surface-2)}
 .calc-keys button.ok{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-family:var(--body);font-size:17px;font-weight:800}
@@ -329,7 +331,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v2.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v2.3 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
 </div></header>
 
@@ -346,15 +348,15 @@ input.picker{cursor:pointer;caret-color:transparent}
 <div class="scrim" id="scrim" data-act="close"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="toast" id="toast" role="status"></div>
-<div class="ovl" id="calc" role="dialog" aria-modal="true" aria-label="Calculette"></div>
+<div class="ovl" id="calc" role="dialog" aria-modal="true" aria-label="Clavier numérique"></div>
 <div class="ovl" id="cal" role="dialog" aria-modal="true" aria-label="Calendrier"></div>
 <div class="gate on" id="gate" aria-live="polite"></div>
 <div class="lock" id="lock" role="dialog" aria-modal="true" aria-label="Application verrouillée"></div>
 
 <script>
 "use strict";
-const VERSION = "2.2";
-const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["personne","Personne"],["autre","Autre"]];
+const VERSION = "2.3";
+const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
 const PALETTE = ["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#A23E2E","#8A4F6D","#3F8A86","#9A8466"];
@@ -417,7 +419,7 @@ function normCfg(c){
     out.categories=c.categories.map(n=>({id:uid8(),name:n,subs:[]}));
     defaultCats().filter(x=>x.special).forEach(x=>{ if(!out.categories.some(y=>y.name===x.name)) out.categories.push(x); });
   }
-  out.categories.forEach(k=>{ if(!k.id) k.id=uid8(); if(!Array.isArray(k.subs)) k.subs=[]; k.subs.forEach(s=>{ if(!s.id) s.id=uid8(); }); });
+  out.categories.forEach(k=>{ if(!k.id) k.id=uid8(); if(!Array.isArray(k.subs)) k.subs=[]; k.subs.forEach(s=>{ if(!s.id) s.id=uid8(); if(!k.special&&!Array.isArray(s.subs)) s.subs=[]; }); });
   if(!Array.isArray(out.plans)) out.plans=[];
   out.categories.forEach(k=>{ if(k.type!=="income"&&k.type!=="expense") k.type=!k.special&&INCOME_CATS.some(n=>norm(n)===norm(k.name))?"income":"expense"; });
   if(!(c.v>=3)) INCOME_CATS.forEach(n=>{ if(!out.categories.some(k=>norm(k.name)===norm(n))) out.categories.push({id:uid8(),name:n,type:"income",subs:[]}); });
@@ -435,7 +437,8 @@ const curOf = id => (accById(id)||{}).cur||"EUR";
 const accName = id => (accById(id)||{}).name||"Compte supprimé";
 const accColor = id => (accById(id)||{}).color||"#9A8466";
 const personName = id => (PERSONS.find(p=>p[0]===id)||[,"Famille"])[1];
-const personLabel = o => o&&o.person==="autre"&&o.personOther?o.personOther:personName(o&&o.person);
+const personsOf = o => !o?[]:Array.isArray(o.persons)?o.persons:(o.person&&o.person!=="personne"?[o.person]:[]);
+const personLabel = o => { const ps=personsOf(o); if(!ps.length) return ""; const n=ps.map(id=>id==="autre"?(o.personOther||"Autre"):personName(id)).join(", "); return ps.length>1?`${n} (÷${ps.length})`:n; };
 const personFromName = n => (PERSONS.find(p=>norm(p[1])===norm(n))||[null])[0];
 const freqOf = id => FREQS.find(f=>f[0]===id)||FREQS[0];
 const conv = (amt,cur,r) => cur==="CHF"?amt*r:amt;
@@ -443,14 +446,16 @@ const catByName = n => cfg.categories.find(c=>c.name===n);
 function subOf(catName,subId){ const c=catByName(catName); return c&&subId?c.subs.find(s=>s.id===subId):null; }
 function ageOn(birth,iso){ if(!isISO(birth)||!isISO(iso)) return null; return +iso.slice(0,4)-+birth.slice(0,4); }
 function nextBirthday(birth){ if(!isISO(birth)) return null; let d=TODAY.slice(0,4)+birth.slice(4); if(d<TODAY) d=(+TODAY.slice(0,4)+1)+birth.slice(4); return d; }
-function catLabel(catName,subId){ const s=subOf(catName,subId); return s?`${catName} › ${s.name}`:(catName||""); }
+function catLabel(catName,subId,sub2Id){ const s=subOf(catName,subId); if(!s) return catName||""; const s2=sub2Id&&Array.isArray(s.subs)?s.subs.find(x=>x.id===sub2Id):null; return `${catName} › ${s.name}${s2?" › "+s2.name:""}`; }
+function sub2Of(catName,subId,sub2Id){ const s=subOf(catName,subId); return s&&sub2Id&&Array.isArray(s.subs)?s.subs.find(x=>x.id===sub2Id):null; }
+function needSub2(d){ const c=catByName(d.cat), s=subOf(d.cat,d.sub); return !!(c&&!c.special&&s&&Array.isArray(s.subs)&&s.subs.length); }
 
 /* ---------- moteur ---------- */
 function virtualPlans(){
   const out=[];
   cfg.categories.forEach(c=>{
-    if(c.special==="birthday") c.subs.forEach(s=>{ if(isISO(s.birth)&&+s.budget>0) out.push({id:"bd-"+s.id,virtual:true,special:"birthday",kind:"expense",nature:"variable",label:"Anniversaire "+s.name,amount:+s.budget,acc:c.acc||"cc",cat:c.name,sub:s.id,person:personFromName(s.name)||"famille",freq:"annual",date:s.birth}); });
-    if(c.special==="christmas") c.subs.forEach(s=>{ if(+s.budget>0) out.push({id:"xm-"+s.id,virtual:true,special:"christmas",kind:"expense",nature:"variable",label:"Noël "+s.name,amount:+s.budget,acc:c.acc||"cc",cat:c.name,sub:s.id,person:personFromName(s.name)||"famille",freq:"annual",date:"2000-12-01"}); });
+    if(c.special==="birthday") c.subs.forEach(s=>{ if(isISO(s.birth)&&+s.budget>0) out.push({id:"bd-"+s.id,virtual:true,special:"birthday",kind:"expense",nature:"variable",label:"Anniversaire "+s.name,amount:+s.budget,acc:c.acc||"cc",cat:c.name,sub:s.id,persons:personFromName(s.name)?[personFromName(s.name)]:[],freq:"annual",date:s.birth}); });
+    if(c.special==="christmas") c.subs.forEach(s=>{ if(+s.budget>0) out.push({id:"xm-"+s.id,virtual:true,special:"christmas",kind:"expense",nature:"variable",label:"Noël "+s.name,amount:+s.budget,acc:c.acc||"cc",cat:c.name,sub:s.id,persons:personFromName(s.name)?[personFromName(s.name)]:[],freq:"annual",date:"2000-12-01"}); });
   });
   return out;
 }
@@ -478,7 +483,7 @@ function planTransferAmounts(p){
 }
 function occAsTx(o){ const p=o.p;
   if(p.kind==="transfer") return Object.assign({kind:"transfer",from:p.from,to:p.to,date:o.date,nature:"fixe"},planTransferAmounts(p));
-  return {kind:p.kind,acc:p.acc,amount:p.amount,date:o.date,nature:p.nature,cat:p.cat,person:p.person};
+  return {kind:p.kind,acc:p.acc,amount:p.amount,date:o.date,nature:p.nature,cat:p.cat,persons:personsOf(p),personOther:p.personOther};
 }
 function txFlows(t){
   if(t.kind==="income") return [[t.acc,+t.amount]];
@@ -500,7 +505,7 @@ function addTx(X,t,r){
   else if(t.kind==="expense"){
     const v=conv(t.amount,curOf(t.acc),r);
     if(t.nature==="variable") X.variable+=v; else X.fixed+=v;
-    X.cats[t.cat]=(X.cats[t.cat]||0)+v; const pp=t.person||"famille"; X.people[pp]=(X.people[pp]||0)+v;
+    X.cats[t.cat]=(X.cats[t.cat]||0)+v; const ps=personsOf(t); if(ps.length) ps.forEach(pp=>{ X.people[pp]=(X.people[pp]||0)+v/ps.length; }); else X.people.none=(X.people.none||0)+v;
   } else if(t.fee){ const v=conv(t.fee,curOf(t.from),r); X.fees+=v; X.cats["Frais de change"]=(X.cats["Frais de change"]||0)+v; }
 }
 const result = X => X.income-X.fixed-X.variable-X.fees;
@@ -532,7 +537,7 @@ function calcMonth(ym){
   else {
     F=blank(); tx.forEach(t=>addTx(F,t,rA));
     pointRows.filter(r=>!r.done).forEach(r=>addTx(F,occAsTx(r.o),rP));
-    varRows.forEach(v=>{ const rem=Math.max(0,v.planned-v.actual); if(rem>0) addTx(F,{kind:"expense",acc:v.acc,amount:rem,nature:"variable",cat:v.cat,person:"famille"},rP); });
+    varRows.forEach(v=>{ const rem=Math.max(0,v.planned-v.actual); if(rem>0) addTx(F,{kind:"expense",acc:v.acc,amount:rem,nature:"variable",cat:v.cat,persons:[]},rP); });
   }
   const res={ym,occ,tx,rA,rP,hasRate:sf>0,P,A,F,pointRows,varRows,unplanned};
   memo.set(ym,res); return res;
@@ -879,7 +884,7 @@ function viewMonth(){
   h+=block("Revenus",rowsOf("income"));
   h+=block("Virements",rowsOf("transfer"));
   if(c.unplanned.length) h+=`<section class="block"><div class="bh"><h2>Hors prévision</h2><div class="t">fixes ou revenus non prévus</div></div><div class="card list">${c.unplanned.map(t=>txRow(t)).join("")}</div></section>`;
-  h+=`<section class="block"><div class="bh"><h2>Par personne</h2><div class="t">dépenses réelles / prévues</div></div><div class="people">${PERSONS.map(([id,n])=>`<div class="card person"><div class="n">${n}</div><b>${fmt(c.A.people[id]||0,"EUR",0)}</b><small>prévu ${fmt(c.P.people[id]||0,"EUR",0)}</small></div>`).join("")}</div></section>`;
+  h+=`<section class="block"><div class="bh"><h2>Par personne</h2><div class="t">dépenses réelles / prévues</div></div><div class="people">${PERSONS.concat([["none","Non attribué"]]).map(([id,n])=>`<div class="card person"><div class="n">${n}</div><b>${fmt(c.A.people[id]||0,"EUR",0)}</b><small>prévu ${fmt(c.P.people[id]||0,"EUR",0)}</small></div>`).join("")}</div></section>`;
   const all=(TX[ym]||[]).slice().sort((a,b)=>a.date<b.date?1:-1); const effSet=new Set(c.tx.map(t=>t.id));
   h+=`<section class="block"><div class="bh"><h2>Journal du mois</h2><div class="t">${all.length} opération${all.length>1?"s":""}</div></div>${all.length?`<div class="card list">${all.map(t=>txRow(t,null,!effSet.has(t.id))).join("")}</div>`:`<div class="card empty"><p style="margin:0">Aucune opération ce mois-ci. Utilise le bouton + ou coche une prévision.</p></div>`}</section>`;
   return h;
@@ -918,7 +923,7 @@ function txRow(t,acc,excluded){
     meta=`${shortDate(t.date)} · ${accName(t.from)} → ${accName(t.to)}`;
   } else {
     if(!acc){ const s=t.kind==="income"?1:-1; amt=`<b class="${t.kind==="income"?"pos":""} ${excluded?"mut":""}">${sfmt(s*t.amount,curOf(t.acc))}</b><small>${excluded?"compris dans le total":t.kind==="income"?"revenu":t.bulk?"total du mois":t.nature==="variable"?"variable":"fixe"}${t.link&&!excluded?" · prévu":""}</small>`; }
-    meta=`${shortDate(t.date)} · ${catLabel(t.cat,t.sub)} · ${accName(t.acc)}${t.kind!=="income"?" · "+personLabel(t):""}`;
+    meta=`${shortDate(t.date)} · ${catLabel(t.cat,t.sub,t.sub2)} · ${accName(t.acc)}${t.kind!=="income"&&personLabel(t)?" · "+personLabel(t):""}`;
   }
   const color=t.kind==="transfer"?accColor(t.to):accColor(t.acc);
   return `<button class="row" data-act="editTx" data-id="${t.id}"><span class="cdot" style="--c:${color}"></span><div class="main"><div class="l">${esc(t.label)}</div><div class="m">${esc(meta)}</div></div><div class="amt">${amt}</div></button>`;
@@ -994,7 +999,7 @@ function viewPlans(){
     h+=`<section class="block"><div class="bh"><h2>${t}</h2><div class="t">${list.length} élément${list.length>1?"s":""}</div></div><div class="card list">${list.map(p=>{
       const a=p.kind==="transfer"?p.from:p.acc, cur=curOf(a), fq=freqOf(p.freq), ended=p.end&&p.end<TODAY;
       const when=p.virtual?(p.special==="birthday"?"Chaque année le "+shortDate(p.date):"En décembre"):fq[1]+(p.freq==="once"?" · "+shortDate(p.date):FREQ_STEP[p.freq]?" · le "+(+p.date.slice(8)):"");
-      const meta=[when,p.kind==="transfer"?`${accName(p.from)} → ${accName(p.to)}`:accName(p.acc),p.kind!=="transfer"?catLabel(p.cat,p.sub):null,p.kind!=="transfer"?personLabel(p):null].filter(Boolean).join(" · ");
+      const meta=[when,p.kind==="transfer"?`${accName(p.from)} → ${accName(p.to)}`:accName(p.acc),p.kind!=="transfer"?catLabel(p.cat,p.sub,p.sub2):null,p.kind!=="transfer"?personLabel(p):null].filter(Boolean).join(" · ");
       return `<div class="row"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)} ${ended?'<span class="chip">terminé</span>':""}</div><div class="m">${esc(meta)}</div></div><div class="amt"><b>${fmt(p.amount,cur)}</b>${fq[2]!==1&&fq[2]>0?`<small>≈ ${fmt(p.amount*fq[2],cur,0)}/mois</small>`:""}</div></div>`;}).join("")}</div></section>`;
   });
   if(!ps.length) h+=`<div class="card empty" style="margin-top:14px"><h3>Rien de prévu pour l'instant</h3><p>Crée-les dans Réglages › Créer un événement : salaire, allocations, transfert CHF → €, prélèvements fixes, budgets variables, virements.</p></div>`;
@@ -1036,9 +1041,9 @@ const segF=(f,opts,act="set")=>`<div class="seg" role="group">${opts.map(([v,l])
 const accChips=(f,filter)=>`<div class="chips">${cfg.accounts.filter(filter||(()=>true)).map(a=>`<button type="button" class="chipbtn ${D()[f]===a.id?"on":""}" style="--c:${a.color}" data-act="set" data-f="${f}" data-v="${a.id}"><span class="cdot" style="--c:${a.color}"></span>${esc(a.name)}</button>`).join("")}</div>`;
 
 /* ----- assistant pas à pas ----- */
-function wizSteps(d){ if(d.kind==="transfer") return ["kind","accounts","amount","recap"]; const s=["kind"]; if(d.kind==="expense") s.push("nature"); return s.concat(["cat","sub","amount","recap"]); }
+function wizSteps(d){ if(d.kind==="transfer") return ["kind","accounts","amount","recap"]; const s=["kind"]; if(d.kind==="expense") s.push("nature"); return s.concat(["cat","sub"],needSub2(d)?["sub2"]:[],["amount","recap"]); }
 function newWizard(mode,kind){
-  const d={mode,step:"kind",kind:"",nature:"",cat:"",sub:"",amount:"",acc:"cc",date:mode==="tx"?(ui.ym===CUR_YM?TODAY:ui.ym+"-01"):CUR_YM+"-05",person:"famille",label:"",link:"",from:"chf",to:"cc",amtFrom:"",amtTo:"",fee:"",freq:"monthly",end:""};
+  const d={mode,step:"kind",kind:"",nature:"",cat:"",sub:"",amount:"",acc:"cc",date:mode==="tx"?(ui.ym===CUR_YM?TODAY:ui.ym+"-01"):CUR_YM+"-05",persons:[],personOther:"",sub2:"",label:"",link:"",from:"chf",to:"cc",amtFrom:"",amtTo:"",fee:"",freq:"monthly",end:""};
   if(!accById(d.acc)) d.acc=cfg.accounts[0].id;
   if(kind){ applyKind(d,kind); d.step=wizSteps(d)[1]; }
   return d;
@@ -1051,8 +1056,8 @@ function applyKind(d,k){
 }
 function applySub(d){
   const c=catByName(d.cat), s=c&&c.subs.find(x=>x.id===d.sub); if(!s) return;
-  if(c.special==="birthday"){ const ref=d.mode==="tx"?d.date:(nextBirthday(s.birth)||d.date); const a=ageOn(s.birth,ref); d.label=`Anniversaire ${s.name}${a!=null?` (${a} ans)`:""}`; d.person=personFromName(s.name)||d.person; if(d.mode==="plan"&&isISO(s.birth)){ d.date=s.birth; d.freq="annual"; } if(s.budget&&!d.amount) d.amount=numStr(s.budget); }
-  else if(c.special==="christmas"){ d.label=`Noël ${s.name}`; d.person=personFromName(s.name)||d.person; if(s.budget&&!d.amount) d.amount=numStr(s.budget); }
+  if(c.special==="birthday"){ const ref=d.mode==="tx"?d.date:(nextBirthday(s.birth)||d.date); const a=ageOn(s.birth,ref); d.label=`Anniversaire ${s.name}${a!=null?` (${a} ans)`:""}`; { const pid=personFromName(s.name); if(pid) d.persons=[pid]; } if(d.mode==="plan"&&isISO(s.birth)){ d.date=s.birth; d.freq="annual"; } if(s.budget&&!d.amount) d.amount=numStr(s.budget); }
+  else if(c.special==="christmas"){ d.label=`Noël ${s.name}`; { const pid=personFromName(s.name); if(pid) d.persons=[pid]; } if(s.budget&&!d.amount) d.amount=numStr(s.budget); }
 }
 function pendingOcc(d){
   if(d.mode!=="tx"||!isISO(d.date)) return [];
@@ -1093,6 +1098,10 @@ function sheetWizard(s){
   } else if(step==="cat"){
     h+=`<div class="q">${d.kind==="income"?"Quelle catégorie de revenu ?":"Quelle catégorie de dépense ?"}</div><div class="cgrid">${catsOf(d.kind).map(c=>`<button class="cbtn ${d.cat===c.name?"on":""}" data-act="wz" data-f="cat" data-v="${esc(c.name)}">${esc(c.name)}${c.subs.length?`<small>${c.subs.length} sous-catégorie${c.subs.length>1?"s":""}</small>`:c.special?`<small>${c.special==="birthday"?"prénom et âge":"budget par personne"}</small>`:""}</button>`).join("")}</div>
       <div style="display:flex;gap:8px;margin-top:12px">${inp("newCat","text",'placeholder="Nouvelle catégorie"')}<button class="btn" data-act="wzNewCat">Créer</button></div>`;
+  } else if(step==="sub2"){
+    const sub=subOf(d.cat,d.sub)||{subs:[]};
+    h+=`<div class="q">${esc(d.cat)} › ${esc(sub.name)} › précision</div><div class="tiles"><button class="tile ${!d.sub2?"on":""}" data-act="wz" data-f="sub2" data-v=""><div><b>Sans précision</b><span>Directement dans ${esc(sub.name)}</span></div></button>${(sub.subs||[]).map(x=>`<button class="tile ${d.sub2===x.id?"on":""}" data-act="wz" data-f="sub2" data-v="${x.id}"><div><b>${esc(x.name)}</b></div></button>`).join("")}</div>
+      <h4>Nouvelle sous-sous-catégorie</h4><div style="display:flex;gap:8px">${inp("ns2Name","text",'placeholder="Ex. Pain"')}<button class="btn" data-act="wzNewSub2">Créer</button></div>`;
   } else if(step==="sub"){
     const c=catByName(d.cat)||{subs:[]};
     h+=`<div class="q">${esc(d.cat)} › sous-catégorie</div><div class="tiles">`;
@@ -1119,12 +1128,13 @@ function sheetWizard(s){
     } else {
       h+=fld(`Montant${d.mode==="plan"&&d.nature==="variable"?" du budget":""} (${curOf(d.acc)})`,inp("amount","text",'inputmode="decimal" class="amount-in" placeholder="0,00"'));
       h+=fld("Compte",accChips("acc"));
-      h+=fld("Pour",`<div class="chips">${PERSONS.map(([v,l])=>`<button type="button" class="chipbtn ${d.person===v?"on":""}" data-act="set" data-f="person" data-v="${v}">${l}</button>`).join("")}</div>`);
-      if(d.person==="autre") h+=fld("Nom de la personne",inp("personOther","text",'placeholder="Mamie, collègue, association…"'));
+      const ps=d.persons||[], share=ps.length>1&&num(d.amount)>0?` · ${fmt(num(d.amount)/ps.length,curOf(d.acc))} chacun`:"";
+      h+=fld(`Pour qui ? <span class="mut" style="font-weight:600">(facultatif, plusieurs choix possibles${share})</span>`,`<div class="chips">${PERSONS.map(([v,l])=>`<button type="button" class="chipbtn ${ps.includes(v)?"on":""}" data-act="togglePerson" data-v="${v}" aria-pressed="${ps.includes(v)}">${ps.includes(v)?"✓ ":""}${l}</button>`).join("")}</div>`);
+      if(ps.includes("autre")) h+=fld("Nom de l'autre personne",inp("personOther","text",'placeholder="Mamie, collègue, association…"'));
     }
     if(d.mode==="tx") h+=fld(d.kind==="expense"?"Date":"Date du virement",inp("date","date"));
     else { h+=`<div class="grid2">${fld("Fréquence",sel("freq",FREQS.map(f=>[f[0],f[1]])))}${fld(d.freq==="once"?"Date":d.kind==="expense"?"1er prélèvement":"1er virement",inp("date","date"))}</div>`; if(d.freq!=="once") h+=fld("Date de fin (facultatif)",inp("end","date"),"Laisse vide si ça continue."); }
-    h+=fld("Libellé (facultatif)",inp("label","text",`placeholder="${d.kind==="transfer"?"Transfert mensuel":d.cat?esc(catLabel(d.cat,d.sub)):""}"`));
+    h+=fld("Libellé (facultatif)",inp("label","text",`placeholder="${d.kind==="transfer"?"Transfert mensuel":d.cat?esc(catLabel(d.cat,d.sub,d.sub2)):""}"`));
     const po=pendingOcc(d);
     if(po.length||d.link) h+=fld("Correspond à une prévision",sel("link",[["","Aucune (hors prévision)"],...po.map(r=>[r.o.key,`${r.o.label} · ${shortDate(r.o.date)} · ${fmt(r.planned,r.cur)}`])]),"La prévision choisie sera marquée comme pointée.");
     if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
@@ -1138,11 +1148,11 @@ function sheetWizard(s){
       if(cross&&(d.mode==="plan"?pa.fee:num(d.fee))) rows+=L("Frais",fmt(d.mode==="plan"?pa.fee:num(d.fee),curOf(d.from)),"amount");
     } else { amtTxt=fmt(num(d.amount)||0,curOf(d.acc));
       rows+=L("Type",d.kind==="expense"?`Dépense ${d.nature}`:"Revenu","kind");
-      rows+=L("Catégorie",esc(catLabel(d.cat,d.sub)),"cat");
+      rows+=L("Catégorie",esc(catLabel(d.cat,d.sub,d.sub2)),"cat");
       rows+=L("Compte",`<span class="cdot" style="--c:${accColor(d.acc)};margin-right:6px"></span>${esc(accName(d.acc))}`,"amount");
-      rows+=L("Pour",esc(personLabel(d)),"amount"); }
+      rows+=L("Pour",esc(personLabel(d)||"—"),"amount"); }
     rows+= d.mode==="tx"?L("Date",longDate(d.date),"amount"):L("Fréquence",`${freqOf(d.freq)[1]} · dès le ${longDate(d.date)}${d.end&&d.freq!=="once"?" jusqu'au "+longDate(d.end):""}`,"amount");
-    rows+=L("Libellé",esc(d.label||(d.kind==="transfer"?`${accName(d.from)} → ${accName(d.to)}`:catLabel(d.cat,d.sub))),"amount");
+    rows+=L("Libellé",esc(d.label||(d.kind==="transfer"?`${accName(d.from)} → ${accName(d.to)}`:catLabel(d.cat,d.sub,d.sub2))),"amount");
     if(d.mode==="tx"&&d.link){ const o=findOcc(d.link); rows+=L("Prévision",o?esc(o.label)+" · "+shortDate(o.date):"—","amount"); }
     h+=`<div class="q">Récapitulatif</div><div class="recap"><div class="tot"><span class="eyebrow">${KIND_L[d.kind]}${d.mode==="plan"?" prévu":""}</span><b class="${d.kind==="income"?"pos":""}">${amtTxt}</b></div>${rows}</div><p class="note">Touche une ligne pour la modifier.</p>`;
     if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
@@ -1155,13 +1165,13 @@ function findOcc(key){ const i=key.indexOf("@"); const p=allPlans().find(x=>x.id
 function prefillFromOcc(d,o){
   const p=o.p; d.link=o.key; d.label=o.label; applyKind(d,p.kind); d.link=o.key;
   if(p.kind==="transfer"){ const a=planTransferAmounts(p); d.from=p.from; d.to=p.to; d.amtFrom=numStr(a.amtFrom); d.amtTo=numStr(a.amtTo); d.fee=a.fee?numStr(a.fee):""; }
-  else { d.amount=numStr(p.amount); d.acc=p.acc; d.cat=p.cat; d.sub=p.sub||""; d.person=p.person||"famille"; d.nature=p.nature||"fixe"; }
+  else { d.amount=numStr(p.amount); d.acc=p.acc; d.cat=p.cat; d.sub=p.sub||""; d.sub2=p.sub2||""; d.persons=personsOf(p).slice(); d.personOther=p.personOther||""; d.nature=p.nature||"fixe"; }
 }
 function txToDraft(t){
-  return {mode:"tx",step:"recap",id:t.id,kind:t.kind,nature:t.nature||"fixe",cat:t.cat||"",sub:t.sub||"",amount:numStr(t.amount),acc:t.acc||"cc",date:t.date,person:t.person||"famille",personOther:t.personOther||"",label:t.label||"",link:t.link||"",from:t.from||"chf",to:t.to||"cc",amtFrom:numStr(t.amtFrom),amtTo:numStr(t.amtTo),fee:numStr(t.fee),bulk:!!t.bulk,freq:"monthly",end:""};
+  return {mode:"tx",step:"recap",id:t.id,kind:t.kind,nature:t.nature||"fixe",cat:t.cat||"",sub:t.sub||"",sub2:t.sub2||"",amount:numStr(t.amount),acc:t.acc||"cc",date:t.date,persons:personsOf(t).slice(),personOther:t.personOther||"",label:t.label||"",link:t.link||"",from:t.from||"chf",to:t.to||"cc",amtFrom:numStr(t.amtFrom),amtTo:numStr(t.amtTo),fee:numStr(t.fee),bulk:!!t.bulk,freq:"monthly",end:""};
 }
 function planToDraft(p){
-  return {mode:"plan",step:"recap",id:p.id,kind:p.kind,nature:p.nature||"fixe",cat:p.cat||"",sub:p.sub||"",amount:p.kind==="transfer"?"":numStr(p.amount),amtFrom:p.kind==="transfer"?numStr(p.amount):"",acc:p.acc||"cc",date:p.date,person:p.person||"famille",personOther:p.personOther||"",label:p.label||"",link:"",from:p.from||"chf",to:p.to||"cc",amtTo:"",fee:"",freq:p.freq||"monthly",end:p.end||""};
+  return {mode:"plan",step:"recap",id:p.id,kind:p.kind,nature:p.nature||"fixe",cat:p.cat||"",sub:p.sub||"",amount:p.kind==="transfer"?"":numStr(p.amount),amtFrom:p.kind==="transfer"?numStr(p.amount):"",acc:p.acc||"cc",date:p.date,persons:personsOf(p).slice(),personOther:p.personOther||"",sub2:p.sub2||"",label:p.label||"",link:"",from:p.from||"chf",to:p.to||"cc",amtTo:"",fee:"",freq:p.freq||"monthly",end:p.end||""};
 }
 function findTx(id){ for(const ym in TX){ const i=TX[ym].findIndex(t=>t.id===id); if(i>=0) return {ym,i,t:TX[ym][i]}; } return null; }
 function removeTx(id,docs){ const f=findTx(id); if(f){ TX[f.ym].splice(f.i,1); docs.add("tx-"+f.ym); } }
@@ -1170,14 +1180,14 @@ function wzSave(s){
   const d=s.d, err=validateDraft(d); if(err){ s.err=err; renderSheet(); return; }
   if(d.mode==="plan"){
     const p={id:d.id||uid8(),kind:d.kind,freq:d.freq,date:d.date,end:d.freq==="once"?"":(d.end||"")};
-    if(d.kind==="transfer"){ Object.assign(p,{from:d.from,to:d.to,amount:r2(num(d.amtFrom)),nature:"fixe",person:"famille",label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
-    else Object.assign(p,{acc:d.acc,cat:d.cat,sub:d.sub||"",amount:r2(num(d.amount)),person:d.person,personOther:d.person==="autre"?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub)});
+    if(d.kind==="transfer"){ Object.assign(p,{from:d.from,to:d.to,amount:r2(num(d.amtFrom)),nature:"fixe",persons:[],label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
+    else Object.assign(p,{acc:d.acc,cat:d.cat,sub:d.sub||"",sub2:d.sub2||"",amount:r2(num(d.amount)),persons:(d.persons||[]).slice(),personOther:(d.persons||[]).includes("autre")?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub,d.sub2)}); delete p.person;
     const i=cfg.plans.findIndex(x=>x.id===p.id); if(i>=0) cfg.plans[i]=p; else cfg.plans.push(p);
     closeSheet(); changed(["config"]); toast(d.id?"Événement modifié":"Événement créé");
   } else {
     const t={id:d.id||uid8(),date:d.date,kind:d.kind,link:d.link||null};
-    if(d.kind==="transfer"){ const cross=curOf(d.from)!==curOf(d.to); Object.assign(t,{from:d.from,to:d.to,amtFrom:r2(num(d.amtFrom)),amtTo:cross?r2(num(d.amtTo)):r2(num(d.amtFrom)),fee:r2(num(d.fee)||0),nature:"fixe",person:"famille",label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
-    else { Object.assign(t,{amount:r2(num(d.amount)),acc:d.acc,cat:d.cat,sub:d.sub||"",person:d.person,personOther:d.person==="autre"?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub)}); if(d.bulk) t.bulk=true; if(isVarExp(t)) t.link=null; }
+    if(d.kind==="transfer"){ const cross=curOf(d.from)!==curOf(d.to); Object.assign(t,{from:d.from,to:d.to,amtFrom:r2(num(d.amtFrom)),amtTo:cross?r2(num(d.amtTo)):r2(num(d.amtFrom)),fee:r2(num(d.fee)||0),nature:"fixe",persons:[],label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
+    else { Object.assign(t,{amount:r2(num(d.amount)),acc:d.acc,cat:d.cat,sub:d.sub||"",sub2:d.sub2||"",persons:(d.persons||[]).slice(),personOther:(d.persons||[]).includes("autre")?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub,d.sub2)}); delete t.person; if(d.bulk) t.bulk=true; if(isVarExp(t)) t.link=null; }
     const docs=new Set(); upsertTx(t,docs); closeSheet(); changed([...docs]); toast(d.id?"Opération modifiée":"Opération ajoutée");
   }
 }
@@ -1282,7 +1292,7 @@ function saveChf(s){
   if(!(recv>0)){ s.err="Indique le montant reçu en euros."; return renderSheet(); }
   if(!isISO(d.date)){ s.err="Choisis une date."; return renderSheet(); }
   const old=d.id?findTx(d.id):null;
-  const t=Object.assign({},old?old.t:{id:uid8(),kind:"transfer",nature:"fixe",person:"famille"},{date:d.date,from:chfAcc(),to:eurMain(),amtFrom:sent,amtTo:recv,fee:0,label:"Transfert CHF → €",link:d.link||null});
+  const t=Object.assign({},old?old.t:{id:uid8(),kind:"transfer",nature:"fixe",persons:[]},{date:d.date,from:chfAcc(),to:eurMain(),amtFrom:sent,amtTo:recv,fee:0,label:"Transfert CHF → €",link:d.link||null});
   const docs=new Set(); upsertTx(t,docs); closeSheet(); changed([...docs]); toast("Transfert enregistré");
 }
 
@@ -1321,7 +1331,7 @@ function saveBulk(s){
     const [cat,acc]=k.split("|"), v=num(d["v:"+k]), i=list.findIndex(t=>t.bulk&&t.cat+"|"+t.acc===k);
     if(!(v>0)){ if(i>=0) list.splice(i,1); return; }
     if(i>=0) list[i]=Object.assign({},list[i],{amount:r2(v)});
-    else list.push({id:uid8(),bulk:true,kind:"expense",nature:"variable",cat,sub:"",acc,amount:r2(v),date:ym===CUR_YM?TODAY:ym<CUR_YM?lastDay(ym):ym+"-01",label:"Total "+cat,person:"famille",link:null});
+    else list.push({id:uid8(),bulk:true,kind:"expense",nature:"variable",cat,sub:"",acc,amount:r2(v),date:ym===CUR_YM?TODAY:ym<CUR_YM?lastDay(ym):ym+"-01",label:"Total "+cat,persons:[],link:null});
   });
   closeSheet(); changed([...docs]); toast("Totaux enregistrés");
 }
@@ -1429,6 +1439,7 @@ function sheetCatEdit(s){
     const key=`${c.id}:${x.id}`;
     h+=`<div class="subed"><div class="top"><input id="sb-${x.id}-n" data-sub="${key}:name" value="${esc(x.name)}" aria-label="Nom"><button class="mini" data-act="delSub" data-cat="${c.id}" data-id="${x.id}" aria-label="Supprimer ${esc(x.name)}">${I.trash}</button></div>`;
     if(c.special==="birthday"){ const nb=nextBirthday(x.birth); h+=`<div class="grid2">${fld("Date de naissance",`<input id="sb-${x.id}-b" type="date" data-sub="${key}:birth" value="${esc(x.birth||"")}">`)}${fld("Budget cadeau (€)",`<input id="sb-${x.id}-u" inputmode="decimal" data-sub="${key}:budget" value="${esc(numStr(x.budget))}" placeholder="0">`)}</div><small class="mut">${nb?`${ageOn(x.birth,nb)} ans le ${longDate(nb)} · dépensé ${year} : ${fmt(spent(x.id,year),"EUR",0)}`:"Ajoute la date pour le rappel annuel et l'âge."}</small>`; }
+    if(!c.special){ h+=`<div class="chips" style="margin-top:2px">${(x.subs||[]).map(y=>`<span class="cat">${esc(y.name)}<button data-act="delSub2" data-cat="${c.id}" data-sub="${x.id}" data-id="${y.id}" aria-label="Supprimer ${esc(y.name)}">×</button></span>`).join("")}</div><div style="display:flex;gap:8px"><input id="ns2-${x.id}" placeholder="Ajouter une sous-sous-catégorie" aria-label="Nouvelle sous-sous-catégorie de ${esc(x.name)}"><button class="btn sm" data-act="addSub2" data-cat="${c.id}" data-id="${x.id}">Ajouter</button></div>`; }
     if(c.special==="christmas"){ const r=spent(x.id,year), b=+x.budget||0, pct=b>0?r/b:0; h+=`<div class="grid2">${fld("Budget (€)",`<input id="sb-${x.id}-u" inputmode="decimal" data-sub="${key}:budget" value="${esc(numStr(x.budget))}" placeholder="0">`)}<div class="fld"><span>Réel ${year}</span><div style="font-weight:800;font-size:18px;padding-top:8px" class="${r>b&&b>0?"neg":""}">${fmt(r,"EUR",0)}</div></div></div><div class="bar"><i class="${pct>1?"over":pct>.85?"near":""}" style="width:${Math.min(100,pct*100).toFixed(1)}%"></i></div>`; }
     h+=`</div>`;
   });
@@ -1445,7 +1456,7 @@ function sheetCatEdit(s){
 function makeSub(c,d){
   const name=(d.nsName||"").trim(); if(!name) return {err:"Indique un nom."};
   if(c.subs.some(x=>norm(x.name)===norm(name))) return {err:"Ce nom existe déjà dans cette catégorie."};
-  const s={id:uid8(),name};
+  const s={id:uid8(),name}; if(!c.special) s.subs=[];
   if(c.special==="birthday"){ if(!isISO(d.nsBirth)) return {err:"Indique la date de naissance."}; s.birth=d.nsBirth; s.budget=r2(num(d.nsBudget)||0); }
   if(c.special==="christmas") s.budget=r2(num(d.nsBudget)||0);
   c.subs.push(s); d.nsName=""; d.nsBirth=""; d.nsBudget=""; return {sub:s};
@@ -1508,7 +1519,8 @@ document.addEventListener("click",async e=>{
     case "wz": { const d=s.d, f=a.dataset.f, v=a.dataset.v;
       if(f==="kind") applyKind(d,v);
       else if(f==="cat"){ if(d.cat!==v){ d.sub=""; d.link=""; } d.cat=v; const c=catByName(v); if(c&&c.special&&c.acc&&accById(c.acc)) d.acc=c.acc; }
-      else if(f==="sub"){ d.sub=v; applySub(d); }
+      else if(f==="sub"){ if(d.sub!==v) d.sub2=""; d.sub=v; applySub(d); }
+      else if(f==="sub2"){ d.sub2=v; }
       else { d[f]=v; if(f==="nature"&&v==="variable") d.link=""; }
       wzAdvance(s); renderSheet(); break; }
     case "wzBackHead": { const st=wizSteps(s.d), i=st.indexOf(s.d.step); if(i>0&&!(s.d.id&&s.d.step==="recap")){ s.d.step=st[i-1]; s.err=""; renderSheet(); } else popSheet(); break; }
@@ -1519,11 +1531,14 @@ document.addEventListener("click",async e=>{
     case "wzDel": { const d=s.d; if(d.mode==="plan") askConfirm("Supprimer ?","L'événement disparaît de tous les mois. Les opérations déjà pointées sont conservées et passent en « hors prévision ».","Supprimer l'événement",()=>{ cfg.plans=cfg.plans.filter(p=>p.id!==d.id); closeSheet(); changed(["config"]); toast("Événement supprimé"); });
       else askConfirm("Supprimer ?","Cette opération sera supprimée définitivement.","Supprimer",()=>{ const docs=new Set(); removeTx(d.id,docs); closeSheet(); changed([...docs]); toast("Opération supprimée"); }); break; }
     case "wzNewCat": { const n=(s.d.newCat||"").trim(); if(!n) break; let c=cfg.categories.find(x=>norm(x.name)===norm(n)); if(!c){ c={id:uid8(),name:n,type:s.d.kind==="income"?"income":"expense",subs:[]}; cfg.categories.push(c); changed(["config"]); } s.d.newCat=""; s.d.cat=c.name; s.d.sub=""; wzAdvance(s); renderSheet(); break; }
+    case "wzNewSub2": { const sub=subOf(s.d.cat,s.d.sub); const n=(s.d.ns2Name||"").trim(); if(!sub||!n) break; sub.subs=sub.subs||[]; let x=sub.subs.find(y=>norm(y.name)===norm(n)); if(!x){ x={id:uid8(),name:n}; sub.subs.push(x); changed(["config"]); } s.d.ns2Name=""; s.d.sub2=x.id; wzAdvance(s); renderSheet(); break; }
+    case "addSub2": { const c=cfg.categories.find(x=>x.id===a.dataset.cat), sub=c&&c.subs.find(x=>x.id===a.dataset.id); const el=document.getElementById("ns2-"+a.dataset.id); const n=(el&&el.value||"").trim(); if(!sub||!n) break; sub.subs=sub.subs||[]; if(sub.subs.some(y=>norm(y.name)===norm(n))){ toast("Existe déjà"); break; } sub.subs.push({id:uid8(),name:n}); changed(["config"]); renderSheet(); toast("Ajouté"); break; }
+    case "delSub2": { const c=cfg.categories.find(x=>x.id===a.dataset.cat), sub=c&&c.subs.find(x=>x.id===a.dataset.sub); if(!sub) break; sub.subs=(sub.subs||[]).filter(y=>y.id!==a.dataset.id); changed(["config"]); renderSheet(); break; }
     case "wzNewSub": { const c=catByName(s.d.cat); if(!c) break; const r=makeSub(c,s.d); if(r.err){ toast(r.err); break; } changed(["config"]); s.d.sub=r.sub.id; applySub(s.d); wzAdvance(s); renderSheet(); break; }
     case "confirmOk": { const run=s&&s.run; if(run) run(); break; }
     case "point": {
       const o=findOcc(a.dataset.key); if(!o) break; const p=o.p;
-      const t={id:uid8(),date:o.date,kind:p.kind,label:o.label,person:p.person||"famille",link:o.key};
+      const t={id:uid8(),date:o.date,kind:p.kind,label:o.label,persons:personsOf(p).slice(),personOther:p.personOther||"",link:o.key};
       if(p.kind==="transfer") Object.assign(t,{from:p.from,to:p.to,nature:"fixe"},planTransferAmounts(p)); else Object.assign(t,{amount:p.amount,acc:p.acc,cat:p.cat,sub:p.sub||"",nature:p.nature||"fixe"});
       const docs=new Set(); upsertTx(t,docs); changed([...docs]); if(stack.length) renderSheet();
       toast(`« ${o.label} » pointé au montant prévu`,()=>{ const dd=new Set(); removeTx(t.id,dd); changed([...dd]); if(stack.length) renderSheet(); });
@@ -1544,6 +1559,7 @@ document.addEventListener("click",async e=>{
     case "newChf": { const c=calcMonth(s.ym); stack[stack.length-1]={type:"chf",ym:s.ym,d:{sent:"",recv:"",date:s.ym===CUR_YM?TODAY:s.ym+"-01",link:""},others:chfTransfers(c).done.map(x=>x.id)}; renderSheet(); break; }
     case "delChf": askConfirm("Supprimer ce transfert ?","Il sera retiré des comptes CHF et courant.","Supprimer",()=>{ const docs=new Set(); removeTx(s.d.id,docs); closeSheet(); changed([...docs]); toast("Transfert supprimé"); }); break;
     case "openPlans": openSheet({type:"plans"}); break;
+    case "togglePerson": { const d=s.d, v=a.dataset.v; d.persons=(d.persons||[]).slice(); const i=d.persons.indexOf(v); if(i>=0) d.persons.splice(i,1); else d.persons.push(v); renderSheet(); break; }
     case "openSecurity": openSheet({type:"security"}); break;
     case "openIncomes": openSheet({type:"incomes",ym:ui.ym}); break;
     case "openIncomeEntry": openIncome(true); break;
@@ -1698,7 +1714,7 @@ function buildCsv(){
   const rows=Object.keys(TX).sort().flatMap(k=>TX[k].slice().sort((a,b)=>a.date<b.date?-1:1)).map(t=>{
     const sub=subOf(t.cat,t.sub);
     if(t.kind==="transfer") return [t.date,"Virement","","","",t.label,accName(t.from),accName(t.to),n(t.amtFrom),curOf(t.from),n(t.amtTo),curOf(t.to),n(t.fee),"",t.link?"oui":""];
-    return [t.date,t.kind==="income"?"Revenu":"Dépense",t.kind==="income"?"":(t.bulk?"variable (total)":t.nature),t.cat,sub?sub.name:"",t.label,accName(t.acc),"",n(t.kind==="income"?t.amount:-t.amount),curOf(t.acc),"","","",personLabel(t),t.link?"oui":""];
+    return [t.date,t.kind==="income"?"Revenu":"Dépense",t.kind==="income"?"":(t.bulk?"variable (total)":t.nature),t.cat,sub?sub.name+(sub2Of(t.cat,t.sub,t.sub2)?" › "+sub2Of(t.cat,t.sub,t.sub2).name:""):"",t.label,accName(t.acc),"",n(t.kind==="income"?t.amount:-t.amount),curOf(t.acc),"","","",personLabel(t),t.link?"oui":""];
   });
   return "\ufeff"+[head,...rows].map(r=>r.map(q).join(";")).join("\r\n");
 }
@@ -1768,11 +1784,11 @@ function openCalc(el){
 }
 function calcLabel(el){ const l=el.closest("label"); const sp=l&&l.querySelector("span"); return sp?sp.textContent:(el.getAttribute("aria-label")||"Montant"); }
 function renderCalc(){
-  const e=CALC.expr, r=calcEval(e), hasOp=/[+\-×÷]/.test(e.slice(1));
-  const res=CALC.err?"Calcul impossible":(e===""?"0":hasOp?(isNaN(r)?"…":String(r).replace(".",",")):e);
+  const e=CALC.expr, hasOp=false;
+  const res=e===""?"0":e;
   document.getElementById("calc").innerHTML=`<div class="pad-sheet"><div class="calc-top"><span>${esc(calcLabel(CALC.el))}</span><button class="iconbtn" data-cx="cancel" aria-label="Fermer">${I.close}</button></div>
-  <div class="calc-disp"><div class="calc-expr">${hasOp?esc(e):"&nbsp;"}</div><div class="calc-res ${CALC.err?"err":""}">${esc(res)}</div></div>
-  <div class="calc-keys">${[["C","fn"],["⌫","fn"],["÷","op"],["×","op"],["7"],["8"],["9"],["-","op"],["4"],["5"],["6"],["+","op"],["1"],["2"],["3"],["=","op"],[","],["0"],["00"],["OK","ok"]].map(([k,c])=>`<button type="button" class="${c||""}" data-cx="${k}" aria-label="${k==="⌫"?"Effacer":k==="-"?"moins":k}">${k==="-"?"−":k}</button>`).join("")}</div></div>`;
+  <div class="calc-disp"><div class="calc-expr">&nbsp;</div><div class="calc-res ${CALC.err?"err":""}">${esc(res)}</div></div>
+  <div class="calc-keys">${["1","2","3","4","5","6","7","8","9",",","0","⌫"].map(k=>`<button type="button" class="${k==="⌫"||k===","?"fn":""}" data-cx="${k}" aria-label="${k==="⌫"?"Effacer":k===","?"virgule":k}">${k}</button>`).join("")}<button type="button" class="ok" data-cx="OK" style="grid-column:1/-1">Valider</button></div></div>`;
 }
 function calcKey(k){
   let e=CALC.expr; CALC.err=false; const last=e.slice(-1), ops="+-×÷";
@@ -1817,7 +1833,7 @@ document.addEventListener("click",e=>{
   const i=e.target.closest("input[data-pk]"); if(i){ e.preventDefault(); i.blur(); if(i.dataset.pk==="calc") openCalc(i); else openCal(i); }
 },true);
 document.addEventListener("keydown",e=>{
-  if(document.getElementById("calc").classList.contains("on")){ const map={"*":"×","/":"÷","Enter":"OK","Backspace":"⌫","Escape":"cancel",".":",",",":",","-":"-","+":"+","=":"="}; const k=/^[0-9]$/.test(e.key)?e.key:map[e.key]; if(k){ e.preventDefault(); e.stopPropagation(); calcKey(k); } }
+  if(document.getElementById("calc").classList.contains("on")){ const map={"Enter":"OK","Backspace":"⌫","Escape":"cancel",".":",",",":","}; const k=/^[0-9]$/.test(e.key)?e.key:map[e.key]; if(k){ e.preventDefault(); e.stopPropagation(); calcKey(k); } }
   else if(document.getElementById("cal").classList.contains("on")&&e.key==="Escape"){ calKey("cancel"); }
 },true);
 new MutationObserver(()=>enhanceInputs()).observe(document.body,{childList:true,subtree:true});
