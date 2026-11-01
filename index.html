@@ -293,6 +293,33 @@ h4{margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05e
 .catbar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-top:1px solid var(--line)}
 .catbar:first-child{border-top:0}
 .catbar .bar{grid-column:1/-1;margin-top:3px}
+/* calculette et calendrier */
+input.picker{cursor:pointer;caret-color:transparent}
+.ovl{position:fixed;inset:0;z-index:70;background:rgba(17,20,42,.45);display:none;align-items:flex-end;justify-content:center}
+.ovl.on{display:flex}
+.pad-sheet{width:100%;max-width:540px;background:var(--surface);border-radius:24px 24px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -10px 30px rgba(17,20,42,.18)}
+.calc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.calc-top span{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.calc-disp{background:var(--surface-2);border-radius:16px;padding:10px 14px;text-align:right;margin-bottom:12px;min-height:84px}
+.calc-expr{font-size:15px;color:var(--muted);min-height:20px;word-break:break-all}
+.calc-res{font-family:var(--display);font-size:40px;color:var(--title);line-height:1.1;word-break:break-all}
+.calc-res.err{color:var(--neg)}
+.calc-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.calc-keys button{height:56px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-size:24px;font-weight:500;color:var(--ink);padding:0}
+.calc-keys button.op{background:var(--surface-2);color:var(--title);font-weight:600}
+.calc-keys button.fn{font-family:var(--body);font-size:15px;font-weight:800;color:var(--muted);background:var(--surface-2)}
+.calc-keys button.ok{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-family:var(--body);font-size:17px;font-weight:800}
+.calc-keys button:active{transform:scale(.97)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.cal-head b{font-family:var(--display);font-size:22px;font-weight:500;color:var(--title);text-transform:capitalize}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-grid .wd{font-size:11px;font-weight:800;color:var(--muted);padding:4px 0}
+.cal-grid button{height:42px;border-radius:12px;border:0;background:none;font-weight:700;font-size:15px;color:var(--ink);padding:0}
+.cal-grid button.out{color:color-mix(in srgb,var(--muted) 55%,transparent)}
+.cal-grid button.today{box-shadow:inset 0 0 0 1.5px var(--title);color:var(--title)}
+.cal-grid button.sel{background:var(--accent);color:var(--on-accent)}
+.cal-foot{display:flex;gap:8px;margin-top:12px}
+.cal-foot .btn{flex:1}
 @media (max-width:380px){ .big{font-size:42px} .people{grid-template-columns:1fr 1fr} .kpi b{font-size:14px} .duo-c b{font-size:21px} }
 @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
@@ -302,7 +329,7 @@ h4{margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05e
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v2.1 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v2.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
 </div></header>
 
@@ -319,12 +346,14 @@ h4{margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05e
 <div class="scrim" id="scrim" data-act="close"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="toast" id="toast" role="status"></div>
+<div class="ovl" id="calc" role="dialog" aria-modal="true" aria-label="Calculette"></div>
+<div class="ovl" id="cal" role="dialog" aria-modal="true" aria-label="Calendrier"></div>
 <div class="gate on" id="gate" aria-live="polite"></div>
 <div class="lock" id="lock" role="dialog" aria-modal="true" aria-label="Application verrouillée"></div>
 
 <script>
 "use strict";
-const VERSION = "2.1";
+const VERSION = "2.2";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["personne","Personne"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -780,11 +809,13 @@ const I={
   wave:sv('<path d="M3 15c3 0 3-6 6-6s3 6 6 6 3-6 6-6"/>'), wallet:sv('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12.5h2M3 9h18"/>'),
   basket:sv('<path d="M5 10h14l-1.5 9h-11z"/><path d="M9 10l3-6 3 6"/>'), spark:sv('<path d="M12 4v16M4 12h16"/>',2.2),
   tag:sv('<path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.5" cy="8.5" r="1.3"/>'), bank:sv('<path d="M3 10l9-5 9 5M5 10v8M19 10v8M9.5 10v8M14.5 10v8M3 20h18"/>'),
+  lock:sv('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>'),
   trash:sv('<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>'),
 };
 
 /* ---------- rendu ---------- */
 function render(){
+  if(stack.length&&topS().type==="security") setTimeout(renderSheet,0);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===ui.tab));
   document.getElementById("view").innerHTML = ui.tab==="annee"?viewYear():ui.tab==="prev"?viewPlans():ui.tab==="reglages"?viewSettings():viewMonth();
 }
@@ -805,7 +836,7 @@ function viewMonth(){
   const nExp=c.tx.filter(t=>t.kind==="expense").length;
   const vp=c.varRows.reduce((x,v)=>x+conv(v.planned,curOf(v.acc),c.rP),0), va=c.varRows.reduce((x,v)=>x+conv(v.actual,curOf(v.acc),c.rA),0);
   h+=`<div class="duo">
-    <button class="card duo-c" data-act="openIncome"><span class="ic">${I.in}</span><span class="eyebrow">Revenus du mois</span><b>${fmt(incChf,"CHF",0)}</b><small>prévu ${fmt(incPChf,"CHF",0)}${incEur?` · + ${fmt(incEur,"EUR",0)}`:""}</small><small>salaire, allocations et autres</small><span class="go">Saisir</span></button>
+    <button class="card duo-c" data-act="openIncomes"><span class="ic">${I.in}</span><span class="eyebrow">Revenus du mois</span><b>${fmt(incChf,"CHF",0)}</b><small>prévu ${fmt(incPChf,"CHF",0)}${incEur?` · + ${fmt(incEur,"EUR",0)}`:""}</small><small>${incTx.length} revenu${incTx.length>1?"s":""} reçu${incTx.length>1?"s":""}</small><span class="go">Voir le détail</span></button>
     <button class="card duo-c" data-act="openExpenses"><span class="ic">${I.basket}</span><span class="eyebrow">Dépenses du mois</span><b>${fmt(expA,"EUR",0)}</b><small>prévu ${fmt(expP,"EUR",0)} · ${nExp} opération${nExp>1?"s":""}</small><div class="bar"><i class="${epct>1?"over":epct>.85?"near":""}" style="width:${Math.min(100,epct*100).toFixed(1)}%"></i></div><span class="go">Voir la liste</span></button>
   </div>`;
   const xf=chfTransfers(c);
@@ -976,34 +1007,9 @@ function viewSettings(){
     <button class="card create" data-act="newPlan"><span class="ic">${I.spark}</span><div><b>Créer un événement</b><small>Un revenu, une dépense ou un virement prévu, pas à pas</small></div></button>
     <button class="card navcard" data-act="openPlans"><span class="ic">${I.fixed}</span><div class="main"><b>Événements prévus</b><small>${cfg.plans.length} événement${cfg.plans.length>1?"s":""} · modifier ou supprimer</small></div>${I.right}</button>
     <button class="card navcard" data-act="openAccounts"><span class="ic">${I.bank}</span><div class="main"><b>Comptes</b><small>${cfg.accounts.map(a=>`<span class="cdot" style="--c:${a.color}"></span>`).join("")} ${cfg.accounts.length} comptes · noms, soldes, couleurs</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>Compte, sauvegarde et sécurité</b><small>Connexion, double authentification, code, empreinte, fichiers de sauvegarde</small></div>${I.right}</button>
     <button class="card navcard" data-act="openCats"><span class="ic">${I.tag}</span><div class="main"><b>Gérer les catégories</b><small>${cfg.categories.length} catégories · sous-catégories, anniversaires, Noël</small></div>${I.right}</button>
   </div>`;
-  h+=`<section class="block"><div class="bh"><h2>Transfert CHF → €</h2></div><div class="card pad"><div class="grid2">
-    <label class="fld"><span>Taux prévu (€ pour 1 CHF)</span><input id="s-rate" data-set="planRate" inputmode="decimal" value="${esc(String(cfg.planRate).replace(".",","))}"></label>
-    <label class="fld"><span>Frais prévus (CHF)</span><input id="s-fee" data-set="planFee" inputmode="decimal" value="${esc(String(cfg.planFee).replace(".",","))}"></label></div>
-    <p class="note" style="margin-top:10px">Ces valeurs servent au prévu. Pour un vrai transfert, tu saisis le montant envoyé, le montant reçu et les frais : le taux réel est calculé.</p></div></section>`;
-  const bio=!!localStorage.getItem(BIO_KEY);
-  h+=`<section class="block"><div class="bh"><h2>Compte et sécurité</h2></div><div class="card list">
-    <div class="row"><div class="main"><div class="l">${esc(S.email||"Compte")}</div><div class="m">Données chiffrées de bout en bout · ${mode==="cloud"?"synchronisées":"hors ligne"}</div></div><button class="btn sm" data-act="gLogout">Déconnexion</button></div>
-    <button class="row" data-act="openMfa"><div class="main"><div class="l">Double authentification</div><div class="m">Code à 6 chiffres en plus du mot de passe</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
-    <button class="row" data-act="openPass"><div class="main"><div class="l">Phrase secrète</div><div class="m">Changer la phrase qui chiffre tes données</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
-    <button class="row" data-act="forgetDevice"><div class="main"><div class="l">Oublier la phrase sur ce téléphone</div><div class="m">Elle sera redemandée à la prochaine ouverture</div></div></button>
-  </div></section>`;
-  h+=`<section class="block"><div class="bh"><h2>Code et empreinte</h2><div class="t">${cfg.pin?"code activé · "+cfg.pin.len+" chiffres":"désactivé"}</div></div><div class="card pad"><div class="form">
-    ${cfg.pin?`${fld("Verrouiller l'appli",`<div class="seg">${[[0,"Au retour"],[1,"1 min"],[5,"5 min"],[15,"15 min"]].map(([v,l])=>`<button type="button" data-act="pinTimeout" data-v="${v}" class="${(+cfg.pin.timeout||0)===v?"on":""}">${l}</button>`).join("")}</div>`,"Délai après avoir quitté l'appli ou sans utilisation.")}
-    <div class="grid2"><button class="btn" data-act="pinChange">Changer le code</button><button class="btn danger" data-act="pinOff">Désactiver</button></div>
-    ${bio?`<button class="btn" data-act="bioOff">Désactiver l'empreinte / Face ID ici</button>`:`<button class="btn" data-act="bioOn">Activer l'empreinte / Face ID sur ce téléphone</button>`}
-    <button class="btn" data-act="pinLock">Verrouiller maintenant</button>`
-    :`<p class="note" style="margin:0">Demande un code (et si tu veux ton empreinte ou Face ID) à l'ouverture. Le code est le même sur tous tes appareils.</p><button class="btn primary" data-act="pinSet">Activer un code</button>`}</div></div></section>`;
-  const lb=cfg.lastBackup;
-  h+=`<section class="block"><div class="bh"><h2>Fichiers de sauvegarde</h2><div class="t">${lb?"dernier : "+longDate(lb):"aucun pour l'instant"}</div></div><div class="card pad"><div class="form">
-    <p class="note" style="margin:0">Tes données sont dans ta base Supabase, chiffrées. Garde aussi un fichier chez toi (iCloud Drive, Google Drive, Fichiers). Attention : ce fichier n'est pas chiffré, range-le dans un endroit sûr.</p>
-    <button class="btn primary" data-act="dlBackup">Télécharger la sauvegarde complète (.json)</button>
-    <button class="btn" data-act="dlCsv">Exporter les opérations pour Excel (.csv)</button>
-    <label class="btn" for="fileIn" style="cursor:pointer">Restaurer depuis un fichier .json</label>
-    <input type="file" id="fileIn" accept=".json,application/json,text/plain" style="display:none"></div></div></section>`;
-  const conf=getConf();
-  h+=`<section class="block"><div class="bh"><h2>Connexion Supabase</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">${esc(conf?conf.url:"")}</p><button class="btn block" data-act="gChangeBase">Changer de base Supabase</button></div></section>`;
   h+=`<p class="note" style="text-align:center;margin-top:22px">Mes Comptes v${VERSION}</p>`;
   return h;
 }
@@ -1017,7 +1023,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3><button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,security:sheetSecurity,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1075,8 +1081,7 @@ function sheetWizard(s){
   const d=s.d, steps=wizSteps(d), idx=steps.indexOf(d.step);
   const title=d.mode==="plan"?(d.id?"Modifier l'événement":"Créer un événement"):(d.id?"Modifier l'opération":"Nouvelle opération");
   const sub=d.mode==="plan"?"Prévision":"Opération réelle";
-  let h=sheetHead(title,sub)+`<div class="steps">${steps.map((x,i)=>`<i class="${i<=idx?"on":""}"></i>`).join("")}</div>`;
-  if(idx>0&&d.step!=="recap") h+=`<button class="btn ghost sm" style="padding:0;margin:-6px 0 6px" data-act="wzBack">${I.left.replace('<svg','<svg width="16" height="16"')} Étape précédente</button>`;
+  let h=`<div class="grab"></div><div class="sh"><button class="iconbtn" data-act="wzBackHead" aria-label="Retour">${I.left}</button><h3>${title}<small>${sub}</small></h3><button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div><div class="steps">${steps.map((x,i)=>`<i class="${i<=idx?"on":""}"></i>`).join("")}</div>`;
   const step=d.step;
   if(step==="kind"){
     h+=`<div class="q">Qu'est-ce que c'est ?</div><div class="tiles">
@@ -1196,10 +1201,10 @@ function incomeRows(ym){
   });
   return rows;
 }
-function openIncome(){
+function openIncome(push){
   const ym=ui.ym, rows=incomeRows(ym), d={};
   rows.forEach(r=>{ d["on:"+r.key]=!!r.tx||(r.planned!=null&&ym<=CUR_YM); d["amt:"+r.key]=numStr(r.tx?r.tx.amount:r.planned); });
-  openSheet({type:"income",ym,keys:rows.map(r=>r.key),d});
+  (push?pushOrOpen:openSheet)({type:"income",ym,keys:rows.map(r=>r.key),d});
 }
 function sheetIncome(s){
   const d=s.d, rows=incomeRows(s.ym);
@@ -1224,6 +1229,21 @@ function saveIncome(s){
   }
   const docs=new Set(); plan.forEach(x=>{ if(x.off) removeTx(x.off.id,docs); else upsertTx(x.t,docs); });
   closeSheet(); changed([...docs]); toast("Revenus du mois enregistrés");
+}
+function sheetIncomes(s){
+  const c=calcMonth(s.ym), list=c.tx.filter(t=>t.kind==="income");
+  const sum=cur=>list.filter(t=>curOf(t.acc)===cur).reduce((x,t)=>x+t.amount,0);
+  const psum=cur=>c.occ.filter(o=>o.p.kind==="income"&&curOf(o.p.acc)===cur).reduce((x,o)=>x+o.p.amount,0);
+  let h=sheetHead("Revenus du mois",`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
+  h+=`<div class="sumgrid"><div><span>Reçu en CHF</span><b>${fmt(sum("CHF"),"CHF",0)}</b></div><div><span>Prévu en CHF</span><b>${fmt(psum("CHF"),"CHF",0)}</b></div><div><span>Reçu en €</span><b>${fmt(sum("EUR"),"EUR",0)}</b></div><div><span>Total converti</span><b>${fmt(c.A.income,"EUR",0)}</b></div></div>`;
+  const cats={}; list.forEach(t=>{ cats[t.cat]=(cats[t.cat]||0)+conv(t.amount,curOf(t.acc),c.rA); });
+  const ks=Object.keys(cats).sort((a,b)=>cats[b]-cats[a]), mx=ks.length?cats[ks[0]]:1;
+  if(ks.length) h+=`<h4>Par catégorie</h4><div class="card pad" style="padding-top:4px;padding-bottom:4px">${ks.map(k=>`<div class="catbar"><b style="font-weight:700">${esc(k)}</b><span>${fmt(cats[k],"EUR",0)}</span><div class="bar"><i style="width:${(cats[k]/mx*100).toFixed(1)}%;background:var(--pos)"></i></div></div>`).join("")}</div>`;
+  const pend=c.pointRows.filter(r=>r.o.p.kind==="income"&&!r.done);
+  if(pend.length) h+=`<h4>Prévus, pas encore reçus</h4><div class="card list">${pend.map(r=>pointRow(r)).join("")}</div>`;
+  h+=`<h4>Revenus reçus (${list.length})</h4>${list.length?`<div class="card list">${list.map(t=>txRow(t)).join("")}</div>`:`<p class="note">Aucun revenu saisi ce mois-ci.</p>`}`;
+  h+=`<div class="actions"><button class="btn block" data-act="openIncomeEntry">Saisir salaire et allocations</button><button class="btn block" data-act="otherIncome">+ Autre revenu</button></div>`;
+  return h;
 }
 function openExpenses(){ openSheet({type:"expenses",ym:ui.ym}); }
 function sheetExpenses(s){
@@ -1251,6 +1271,7 @@ function sheetChf(s){
   h+=fld("Montant reçu (€)",inp("recv","text",'inputmode="decimal" class="amount-in" placeholder="0,00"'));
   h+=`<div class="live" data-live="chf"></div>`+fld("Date",inp("date","date"));
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
+  h+=`<label class="fld"><span>Taux prévu pour les prévisions (€ pour 1 CHF)</span><input id="s-rate" data-set="planRate" inputmode="decimal" value="${esc(String(cfg.planRate).replace(".",","))}"></label>`;
   h+=`</div><div class="actions"><button class="btn primary block" data-act="saveChf">${d.id?"Enregistrer":"Valider le transfert"}</button>${d.id?`<button class="btn danger block" data-act="delChf">Supprimer ce transfert</button><button class="btn block" data-act="newChf">+ Nouveau transfert ce mois-ci</button>`:""}</div>`;
   if(s.others&&s.others.length) h+=`<h4>Déjà fait ce mois-ci</h4><div class="card list">${s.others.map(id=>{ const f=findTx(id); return f?txRow(f.t):""; }).join("")}</div>`;
   return h;
@@ -1346,6 +1367,32 @@ function sheetAccEdit(s){
 }
 
 /* ----- catégories ----- */
+function sheetSecurity(){
+  let h=sheetHead("Compte, sauvegarde et sécurité");
+  const bio=!!localStorage.getItem(BIO_KEY);
+  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Compte et sécurité</h2></div><div class="card list">
+    <div class="row"><div class="main"><div class="l">${esc(S.email||"Compte")}</div><div class="m">Données chiffrées de bout en bout · ${mode==="cloud"?"synchronisées":"hors ligne"}</div></div><button class="btn sm" data-act="gLogout">Déconnexion</button></div>
+    <button class="row" data-act="openMfa"><div class="main"><div class="l">Double authentification</div><div class="m">Code à 6 chiffres en plus du mot de passe</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
+    <button class="row" data-act="openPass"><div class="main"><div class="l">Phrase secrète</div><div class="m">Changer la phrase qui chiffre tes données</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
+    <button class="row" data-act="forgetDevice"><div class="main"><div class="l">Oublier la phrase sur ce téléphone</div><div class="m">Elle sera redemandée à la prochaine ouverture</div></div></button>
+  </div></section>`;
+  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Code et empreinte</h2><div class="t">${cfg.pin?"code activé · "+cfg.pin.len+" chiffres":"désactivé"}</div></div><div class="card pad"><div class="form">
+    ${cfg.pin?`${fld("Verrouiller l'appli",`<div class="seg">${[[0,"Au retour"],[1,"1 min"],[5,"5 min"],[15,"15 min"]].map(([v,l])=>`<button type="button" data-act="pinTimeout" data-v="${v}" class="${(+cfg.pin.timeout||0)===v?"on":""}">${l}</button>`).join("")}</div>`,"Délai après avoir quitté l'appli ou sans utilisation.")}
+    <div class="grid2"><button class="btn" data-act="pinChange">Changer le code</button><button class="btn danger" data-act="pinOff">Désactiver</button></div>
+    ${bio?`<button class="btn" data-act="bioOff">Désactiver l'empreinte / Face ID ici</button>`:`<button class="btn" data-act="bioOn">Activer l'empreinte / Face ID sur ce téléphone</button>`}
+    <button class="btn" data-act="pinLock">Verrouiller maintenant</button>`
+    :`<p class="note" style="margin:0">Demande un code (et si tu veux ton empreinte ou Face ID) à l'ouverture. Le code est le même sur tous tes appareils.</p><button class="btn primary" data-act="pinSet">Activer un code</button>`}</div></div></section>`;
+  const lb=cfg.lastBackup;
+  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Fichiers de sauvegarde</h2><div class="t">${lb?"dernier : "+longDate(lb):"aucun pour l'instant"}</div></div><div class="card pad"><div class="form">
+    <p class="note" style="margin:0">Tes données sont dans ta base Supabase, chiffrées. Garde aussi un fichier chez toi (iCloud Drive, Google Drive, Fichiers). Attention : ce fichier n'est pas chiffré, range-le dans un endroit sûr.</p>
+    <button class="btn primary" data-act="dlBackup">Télécharger la sauvegarde complète (.json)</button>
+    <button class="btn" data-act="dlCsv">Exporter les opérations pour Excel (.csv)</button>
+    <label class="btn" for="fileIn" style="cursor:pointer">Restaurer depuis un fichier .json</label>
+    <input type="file" id="fileIn" accept=".json,application/json,text/plain" style="display:none"></div></div></section>`;
+  const conf=getConf();
+  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion Supabase</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">${esc(conf?conf.url:"")}</p><button class="btn block" data-act="gChangeBase">Changer de base Supabase</button></div></section>`;
+  return h;
+}
 function sheetPlans(){
   let h=sheetHead("Événements prévus","Touche un événement pour le modifier ou le supprimer");
   const groups=[["Revenus",p=>p.kind==="income"],["Dépenses fixes",p=>p.kind==="expense"&&p.nature!=="variable"],["Dépenses variables (budgets)",p=>p.kind==="expense"&&p.nature==="variable"],["Virements",p=>p.kind==="transfer"]];
@@ -1464,6 +1511,7 @@ document.addEventListener("click",async e=>{
       else if(f==="sub"){ d.sub=v; applySub(d); }
       else { d[f]=v; if(f==="nature"&&v==="variable") d.link=""; }
       wzAdvance(s); renderSheet(); break; }
+    case "wzBackHead": { const st=wizSteps(s.d), i=st.indexOf(s.d.step); if(i>0&&!(s.d.id&&s.d.step==="recap")){ s.d.step=st[i-1]; s.err=""; renderSheet(); } else popSheet(); break; }
     case "wzBack": { const st=wizSteps(s.d), i=st.indexOf(s.d.step); s.d.step=st[Math.max(0,i-1)]; s.err=""; renderSheet(); break; }
     case "wzGo": s.d.step=a.dataset.v; s.err=""; renderSheet(); break;
     case "wzNext": { if(s.d.step==="amount"){ const err=validateDraft(s.d); if(err){ s.err=err; renderSheet(); break; } } if(s.d.step==="accounts"&&(!s.d.to||s.d.from===s.d.to)){ toast("Choisis deux comptes différents"); break; } wzAdvance(s); renderSheet(); break; }
@@ -1496,6 +1544,9 @@ document.addEventListener("click",async e=>{
     case "newChf": { const c=calcMonth(s.ym); stack[stack.length-1]={type:"chf",ym:s.ym,d:{sent:"",recv:"",date:s.ym===CUR_YM?TODAY:s.ym+"-01",link:""},others:chfTransfers(c).done.map(x=>x.id)}; renderSheet(); break; }
     case "delChf": askConfirm("Supprimer ce transfert ?","Il sera retiré des comptes CHF et courant.","Supprimer",()=>{ const docs=new Set(); removeTx(s.d.id,docs); closeSheet(); changed([...docs]); toast("Transfert supprimé"); }); break;
     case "openPlans": openSheet({type:"plans"}); break;
+    case "openSecurity": openSheet({type:"security"}); break;
+    case "openIncomes": openSheet({type:"incomes",ym:ui.ym}); break;
+    case "openIncomeEntry": openIncome(true); break;
     case "catType": { const c=cfg.categories.find(x=>x.id===s.id); if(c){ c.type=a.dataset.v; changed(["config"]); renderSheet(); toast("Type enregistré"); } break; }
     case "bulkFill": { const pc=calcMonth(addMonths(s.ym,-1)); s.keys.forEach(k=>{ if(!String(s.d["v:"+k]||"").trim()){ const pv=pc.varRows.find(x=>x.key===k); if(pv&&pv.actual>0) s.d["v:"+k]=numStr(pv.actual); } }); renderSheet(); break; }
     case "bulkAdd": { const k=s.d.addCat+"|"+s.d.addAcc; if(!s.d.addCat) break; if(!s.keys.includes(k)){ s.keys.push(k); s.d["v:"+k]=""; } renderSheet(); break; }
@@ -1693,6 +1744,83 @@ document.addEventListener("change",e=>{
   changed(["config"]); toast("Réglage enregistré");
 });
 document.addEventListener("keydown",e=>{ if(locked&&!G.view){ if(/^[0-9]$/.test(e.key)) lockKey(e.key); else if(e.key==="Backspace") lockKey("del"); e.preventDefault(); return; } if(e.key==="Escape"&&stack.length) closeSheet(); if(e.key==="Enter"&&e.target.tagName==="INPUT"&&stack.length){ const s=topS(); if(s.type==="wizard"&&s.d.step==="amount"){ e.preventDefault(); document.querySelector('[data-act="wzNext"]')?.click(); } } });
+
+
+/* ---------- calculette & calendrier ---------- */
+let CALC={el:null,expr:"",err:false}, CAL={el:null,ym:"",val:""};
+function enhanceInputs(root){
+  (root||document).querySelectorAll('input[inputmode="decimal"]').forEach(i=>{ if(!i.dataset.pk){ i.readOnly=true; i.dataset.pk="calc"; i.classList.add("picker"); i.setAttribute("aria-haspopup","dialog"); } });
+  (root||document).querySelectorAll('input[type="date"]').forEach(i=>{ if(!i.dataset.pk){ i.readOnly=true; i.dataset.pk="cal"; i.classList.add("picker"); i.setAttribute("aria-haspopup","dialog"); } });
+}
+function setInputValue(el,v){ el.value=v; el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true})); }
+function calcEval(expr){
+  const t=expr.replace(/\s/g,"").replace(/,/g,".").match(/(\d*\.?\d+|\d+\.|[+\-×÷])/g); if(!t) return NaN;
+  const tok=[]; for(let i=0;i<t.length;i++){ const x=t[i]; if("+-×÷".includes(x)){ if(!tok.length||"+-×÷".includes(tok[tok.length-1])){ if(x==="-"&&i+1<t.length&&!"+-×÷".includes(t[i+1])){ tok.push(-parseFloat(t[++i])); continue; } return NaN; } tok.push(x); } else tok.push(parseFloat(x)); }
+  if("+-×÷".includes(tok[tok.length-1])) tok.pop();
+  const st=[tok[0]]; for(let i=1;i<tok.length;i+=2){ const op=tok[i], n=tok[i+1]; if(op==="×") st[st.length-1]*=n; else if(op==="÷"){ if(n===0) return NaN; st[st.length-1]/=n; } else st.push(op,n); }
+  let r=st[0]; for(let i=1;i<st.length;i+=2) r = st[i]==="+"? r+st[i+1] : r-st[i+1];
+  return isFinite(r)?Math.round(r*100)/100:NaN;
+}
+function openCalc(el){
+  CALC={el,expr:(el.value||"").replace(/[\s  ]/g,"").replace(".",","),err:false};
+  if(CALC.expr==="0") CALC.expr="";
+  renderCalc(); document.getElementById("calc").classList.add("on");
+}
+function calcLabel(el){ const l=el.closest("label"); const sp=l&&l.querySelector("span"); return sp?sp.textContent:(el.getAttribute("aria-label")||"Montant"); }
+function renderCalc(){
+  const e=CALC.expr, r=calcEval(e), hasOp=/[+\-×÷]/.test(e.slice(1));
+  const res=CALC.err?"Calcul impossible":(e===""?"0":hasOp?(isNaN(r)?"…":String(r).replace(".",",")):e);
+  document.getElementById("calc").innerHTML=`<div class="pad-sheet"><div class="calc-top"><span>${esc(calcLabel(CALC.el))}</span><button class="iconbtn" data-cx="cancel" aria-label="Fermer">${I.close}</button></div>
+  <div class="calc-disp"><div class="calc-expr">${hasOp?esc(e):"&nbsp;"}</div><div class="calc-res ${CALC.err?"err":""}">${esc(res)}</div></div>
+  <div class="calc-keys">${[["C","fn"],["⌫","fn"],["÷","op"],["×","op"],["7"],["8"],["9"],["-","op"],["4"],["5"],["6"],["+","op"],["1"],["2"],["3"],["=","op"],[","],["0"],["00"],["OK","ok"]].map(([k,c])=>`<button type="button" class="${c||""}" data-cx="${k}" aria-label="${k==="⌫"?"Effacer":k==="-"?"moins":k}">${k==="-"?"−":k}</button>`).join("")}</div></div>`;
+}
+function calcKey(k){
+  let e=CALC.expr; CALC.err=false; const last=e.slice(-1), ops="+-×÷";
+  if(k==="cancel"){ document.getElementById("calc").classList.remove("on"); return; }
+  if(k==="C") e=""; else if(k==="⌫") e=e.slice(0,-1);
+  else if(ops.includes(k)){ if(e===""&&k!=="-") return; if(ops.includes(last)) e=e.slice(0,-1)+k; else e+=k; }
+  else if(k===","){ const seg=e.split(/[+\-×÷]/).pop(); if(seg.includes(",")) return; e+=(seg===""?"0,":","); }
+  else if(k==="="||k==="OK"){ if(e===""){ if(k==="OK"){ setInputValue(CALC.el,""); document.getElementById("calc").classList.remove("on"); } return; }
+    const r=calcEval(e); if(isNaN(r)){ CALC.err=true; renderCalc(); return; }
+    const v=String(r).replace(".",",");
+    if(k==="="){ CALC.expr=v; renderCalc(); return; }
+    setInputValue(CALC.el,v); document.getElementById("calc").classList.remove("on"); return; }
+  else { const seg=e.split(/[+\-×÷]/).pop(); if(seg.includes(",")&&seg.split(",")[1].length>=2) return; if(seg==="0"&&k!==",") e=e.slice(0,-1); e+=k; }
+  CALC.expr=e; renderCalc();
+}
+function openCal(el){
+  const v=isISO(el.value)?el.value:""; CAL={el,val:v,ym:(v||TODAY).slice(0,7)};
+  renderCal(); document.getElementById("cal").classList.add("on");
+}
+function renderCal(){
+  const [y,m]=CAL.ym.split("-").map(Number), first=new Date(Date.UTC(y,m-1,1)).getUTCDay(), off=(first+6)%7, dim=daysIn(y,m);
+  const prevDim=daysIn(m===1?y-1:y,m===1?12:m-1); let cells="";
+  for(let i=0;i<42;i++){ let d,ym=CAL.ym,out=false; if(i<off){ d=prevDim-off+i+1; ym=addMonths(CAL.ym,-1); out=true; } else if(i>=off+dim){ d=i-off-dim+1; ym=addMonths(CAL.ym,1); out=true; } else d=i-off+1;
+    const iso=`${ym}-${pad(d)}`; cells+=`<button type="button" data-cd="${iso}" class="${out?"out":""} ${iso===TODAY?"today":""} ${iso===CAL.val?"sel":""}">${d}</button>`; }
+  const optional=!CAL.el.required&&/end|fin/i.test((CAL.el.dataset.f||"")+(CAL.el.closest("label")?.textContent||""));
+  document.getElementById("cal").innerHTML=`<div class="pad-sheet"><div class="calc-top"><span>${esc(calcLabel(CAL.el))}</span><button class="iconbtn" data-cd="cancel" aria-label="Fermer">${I.close}</button></div>
+  <div class="cal-head"><button class="iconbtn" data-cd="prev" aria-label="Mois précédent">${I.left}</button><b>${monthName(CAL.ym)} ${y}</b><button class="iconbtn" data-cd="next" aria-label="Mois suivant">${I.right}</button></div>
+  <div class="cal-grid">${["L","M","M","J","V","S","D"].map(x=>`<div class="wd">${x}</div>`).join("")}${cells}</div>
+  <div class="cal-foot"><button type="button" class="btn" data-cd="today">Aujourd'hui</button>${optional?`<button type="button" class="btn" data-cd="clear">Effacer</button>`:""}</div></div>`;
+}
+function calKey(k){
+  if(k==="cancel"){ document.getElementById("cal").classList.remove("on"); return; }
+  if(k==="prev"){ CAL.ym=addMonths(CAL.ym,-1); return renderCal(); }
+  if(k==="next"){ CAL.ym=addMonths(CAL.ym,1); return renderCal(); }
+  if(k==="clear"){ setInputValue(CAL.el,""); document.getElementById("cal").classList.remove("on"); return; }
+  const v=k==="today"?TODAY:k; setInputValue(CAL.el,v); document.getElementById("cal").classList.remove("on");
+}
+document.addEventListener("click",e=>{
+  const cx=e.target.closest("[data-cx]"); if(cx){ calcKey(cx.dataset.cx); return; }
+  const cd=e.target.closest("[data-cd]"); if(cd){ calKey(cd.dataset.cd); return; }
+  if(e.target.id==="calc"){ calcKey("cancel"); return; } if(e.target.id==="cal"){ calKey("cancel"); return; }
+  const i=e.target.closest("input[data-pk]"); if(i){ e.preventDefault(); i.blur(); if(i.dataset.pk==="calc") openCalc(i); else openCal(i); }
+},true);
+document.addEventListener("keydown",e=>{
+  if(document.getElementById("calc").classList.contains("on")){ const map={"*":"×","/":"÷","Enter":"OK","Backspace":"⌫","Escape":"cancel",".":",",",":",","-":"-","+":"+","=":"="}; const k=/^[0-9]$/.test(e.key)?e.key:map[e.key]; if(k){ e.preventDefault(); e.stopPropagation(); calcKey(k); } }
+  else if(document.getElementById("cal").classList.contains("on")&&e.key==="Escape"){ calKey("cancel"); }
+},true);
+new MutationObserver(()=>enhanceInputs()).observe(document.body,{childList:true,subtree:true});
 
 /* ---------- démarrage ---------- */
 setSync("loading");
