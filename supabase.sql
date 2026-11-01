@@ -36,14 +36,18 @@ create policy "mc_delete_own" on public.mescomptes_vault for delete to authentic
   using ((select auth.uid()) = user_id);
 
 -- Si la double authentification est activée sur le compte, elle devient OBLIGATOIRE pour lire/écrire
+create schema if not exists mescomptes_private;
+grant usage on schema mescomptes_private to authenticated;
+create or replace function mescomptes_private.has_verified_mfa()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from auth.mfa_factors f where f.user_id = (select auth.uid()) and f.status = 'verified');
+$$;
+revoke execute on function mescomptes_private.has_verified_mfa() from public, anon;
+grant execute on function mescomptes_private.has_verified_mfa() to authenticated;
+
 create policy "mc_require_mfa_if_enrolled" on public.mescomptes_vault as restrictive to authenticated
-  using (
-    array[(select auth.jwt()->>'aal')] <@ (
-      select case when count(id) > 0 then array['aal2'] else array['aal1', 'aal2'] end
-      from auth.mfa_factors
-      where (select auth.uid()) = user_id and status = 'verified'
-    )
-  );
+  using ((select auth.jwt()->>'aal') = 'aal2' or not (select mescomptes_private.has_verified_mfa()))
+  with check ((select auth.jwt()->>'aal') = 'aal2' or not (select mescomptes_private.has_verified_mfa()));
 
 -- Date de mise à jour automatique
 create or replace function public.mescomptes_mescomptes_vault_touch() returns trigger
