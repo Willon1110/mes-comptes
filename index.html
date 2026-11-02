@@ -6,7 +6,7 @@
 <title>Mes Comptes</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#F4EBDD">
+<meta name="theme-color" content="#1B2350">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mes Comptes">
@@ -19,7 +19,8 @@
 <style>
 /* Plan : ocre et indigo — papier crème, chiffres et titres en indigo (Spectral), actions en ocre. Une colonne mobile : saisie rapide en haut, comptes, résultat, puis détail. */
 :root{
-  --bg:#F4EBDD; --surface:#FBF6EE; --surface-2:#EFE4D2; --ink:#1F2340; --muted:#77715F; --line:#E2D6C2;
+  --bg:#1B2350; --surface:#FBF6EE; --surface-2:#EFE4D2; --ink:#1F2340; --muted:#77715F; --line:#E2D6C2;
+  --on-bg:#F4EBDD; --on-bg-muted:#B9BEDB; --bg-line:#2E3870;
   --title:#2E3A7A; --accent:#A8661A; --accent-soft:#F3E2C6; --on-accent:#FFF9F0; --ochre:#C98F33;
   --pos:#2F7A52; --pos-soft:#E1EEE4; --neg:#B23A2E; --neg-soft:#F6DED8; --warn:#9A6410; --warn-soft:#F6E7CC;
   --display:"Spectral", "Iowan Old Style", Georgia, serif;
@@ -30,6 +31,7 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#11142A; --surface:#191E3A; --surface-2:#222848; --ink:#EDE6D8; --muted:#A3A0B6; --line:#2E3458;
+    --on-bg:#EDE6D8; --on-bg-muted:#A3A0B6; --bg-line:#2E3458;
     --title:#B7C0F2; --accent:#E2B262; --accent-soft:#3A3120; --on-accent:#11142A; --ochre:#E2B262;
     --pos:#7CC79A; --pos-soft:#1C3328; --neg:#F08A7C; --neg-soft:#3B2023; --warn:#E8B04B; --warn-soft:#352A12;
     --shadow:0 1px 2px rgba(0,0,0,.35); color-scheme:dark;
@@ -37,6 +39,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#11142A; --surface:#191E3A; --surface-2:#222848; --ink:#EDE6D8; --muted:#A3A0B6; --line:#2E3458;
+  --on-bg:#EDE6D8; --on-bg-muted:#A3A0B6; --bg-line:#2E3458;
   --title:#B7C0F2; --accent:#E2B262; --accent-soft:#3A3120; --on-accent:#11142A; --ochre:#E2B262;
   --pos:#7CC79A; --pos-soft:#1C3328; --neg:#F08A7C; --neg-soft:#3B2023; --warn:#E8B04B; --warn-soft:#352A12;
   --shadow:0 1px 2px rgba(0,0,0,.35); color-scheme:dark;
@@ -50,7 +53,7 @@ button{cursor:pointer}
 .wrap{max-width:540px;margin:0 auto;padding:0 16px 120px}
 header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .top-in{max-width:540px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-.logo{width:36px;height:36px;border-radius:12px;background:var(--title);color:var(--bg);display:grid;place-items:center;font-family:var(--display);font-size:19px;font-weight:600;font-style:italic}
+.logo{width:36px;height:36px;border-radius:12px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-family:var(--display);font-size:19px;font-weight:600;font-style:italic}
 .app{font-weight:800;letter-spacing:-.01em}
 .ver{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
@@ -329,6 +332,25 @@ h4{margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05e
 .pbar .pv{text-align:right;white-space:nowrap}
 .pbar .pv b{display:block;font-size:13px}
 .pbar .pv small{font-size:11px;color:var(--muted)}
+/* fond indigo, cartes crème */
+header.top{border-bottom-color:var(--bg-line)}
+header.top .app{color:var(--on-bg)} header.top .ver{color:var(--on-bg-muted)}
+#view .period h1{color:var(--on-bg)} #view .period small{color:var(--on-bg-muted)}
+#view .bh h2{color:var(--on-bg)} #view .bh .t{color:var(--on-bg-muted)}
+#view>.note,#view section>.note,#view>p.note{color:var(--on-bg-muted)}
+#view .iconbtn{background:color-mix(in srgb,var(--on-bg) 12%,transparent);border-color:color-mix(in srgb,var(--on-bg) 25%,transparent);color:var(--on-bg)}
+.card{box-shadow:0 1px 2px rgba(0,0,0,.12),0 8px 22px rgba(5,8,30,.22)}
+.gate,.lock{background:var(--surface)}
+.flowc{padding:16px}
+.flowc .big{font-size:42px;margin:4px 0 6px}
+.fl{display:block;width:100%;background:none;border:0;padding:12px 0 0;text-align:left}
+.fl+.fl{border-top:1px solid var(--line);margin-top:12px}
+.fl-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;font-weight:700}
+.fl-h b{font-weight:800;white-space:nowrap}
+.trk{display:block;position:relative;height:14px;border-radius:8px;background:var(--surface-2);margin:7px 0 5px}
+.trk .fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px;width:0}
+.trk .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);border-radius:2px}
+.fl small{display:block;font-size:12px;color:var(--muted)}
 /* calculette et calendrier */
 input.picker{cursor:pointer;caret-color:transparent}
 .ovl{position:fixed;inset:0;z-index:70;background:rgba(17,20,42,.45);display:none;align-items:flex-end;justify-content:center}
@@ -365,7 +387,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v2.6 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v2.7 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
 </div></header>
 
@@ -373,9 +395,9 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <nav class="tabs" aria-label="Navigation"><div class="tabs-in">
   <button class="tab" data-act="tab" data-tab="mois"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Mois</button>
-  <button class="tab" data-act="tab" data-tab="annee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/></svg>Année</button>
+  <button class="tab" data-act="tab" data-tab="comptes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-5 9 5M5 10v8M19 10v8M9.5 10v8M14.5 10v8M3 20h18"/></svg>Comptes</button>
   <button class="fab" data-act="fab" aria-label="Ajouter une opération"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button class="tab" data-act="tab" data-tab="prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Prévisions</button>
+  <button class="tab" data-act="tab" data-tab="annee"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/></svg>Année</button>
   <button class="tab" data-act="tab" data-tab="reglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Réglages</button>
 </div></nav>
 
@@ -389,7 +411,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "2.6";
+const VERSION = "2.7";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -466,7 +488,7 @@ function normCfg(c){
 }
 let cfg=defaultCfg(), TX={};
 const ui={tab:"mois",ym:CUR_YM,year:+CUR_YM.slice(0,4)};
-try{ const t=localStorage.getItem(LS+".tab"); if(t) ui.tab=t; }catch(e){}
+try{ const t=localStorage.getItem(LS+".tab"); if(t) ui.tab=t==="prev"?"mois":t; }catch(e){}
 let mode="loading";
 const memo=new Map();
 let stack=[];
@@ -742,7 +764,7 @@ async function openVault(){
   G.f={remember:true}; gate("pass");
 }
 async function enterApp(obj,row,offline,fromSaved){
-  applyData(obj); hideGate(); putCache({iv:row.iv,data:row.data},!!row._pending);
+  ui.anim=true; applyData(obj); hideGate(); putCache({iv:row.iv,data:row.data},!!row._pending);
   setSync(offline?"offline":"cloud");
   if(row._pending) scheduleSave();
   if(fromSaved&&cfg.pin) lockNow();
@@ -868,8 +890,33 @@ const I={
 function render(){
   if(stack.length&&topS().type==="security") setTimeout(renderSheet,0);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===ui.tab));
-  document.getElementById("view").innerHTML = ui.tab==="annee"?viewYear():ui.tab==="prev"?viewPlans():ui.tab==="reglages"?viewSettings():viewMonth();
+  document.getElementById("view").innerHTML = ui.tab==="annee"?viewYear():ui.tab==="comptes"?viewAccounts():ui.tab==="reglages"?viewSettings():viewMonth();
+  if(ui.tab==="mois"&&ui.anim){ ui.anim=false; requestAnimationFrame(animateFlow); } else if(ui.tab==="mois") settleFlow();
 }
+function viewAccounts(){
+  const ym=ui.ym, c=calcMonth(ym), [y]=ym.split("-"), rate=c.hasRate?c.rA:c.rP;
+  let h=periodBar(`${monthName(ym)} ${y}`,"Comptes","prevM","nextM");
+  const tot=cfg.accounts.reduce((x,a)=>x+conv(endBalance(a.id,ym)||0,a.cur,rate),0);
+  const now=ym<=CUR_YM?cfg.accounts.reduce((x,a)=>x+conv(ym===CUR_YM?balanceAt(a.id,TODAY):endBalance(a.id,ym),a.cur,rate),0):null;
+  h+=`<div class="card acc total" style="--c:var(--title);margin-bottom:12px"><div class="n"><span>Total fin de mois</span></div><div class="lbl">tous les comptes · CHF converti au taux ${rate.toFixed(4).replace(".",",")}${c.hasRate?" (transfert du mois)":" (prévu)"}</div>
+    <div class="v ${tot<0?"neg":""}" style="font-size:24px">${fmt(tot,"EUR")}</div>${now!=null?`<div class="s">actuel <b>${fmt(now,"EUR")}</b></div>`:""}</div>`;
+  h+=`<div class="accounts" style="margin-top:0">${cfg.accounts.map(a=>{
+    const end=endBalance(a.id,ym), nw=ym===CUR_YM?balanceAt(a.id,TODAY):ym<CUR_YM?end:null;
+    return `<button class="card acc" style="--c:${a.color}" data-act="openAcc" data-id="${a.id}"><div class="n"><span>${esc(a.name)}</span><span class="cur">${a.cur}</span></div>
+      <div class="lbl">${ym<CUR_YM?"Solde fin de mois":"Prévu fin de mois"}</div><div class="v ${end<0?"neg":""}">${isNaN(end)?"—":fmt(end,a.cur)}</div>
+      <div class="s">${nw==null?"à venir":ym<CUR_YM?"réel":`actuel <b>${fmt(nw,a.cur)}</b>`}</div></button>`;}).join("")}</div>
+    <p class="note">Touche un compte pour voir ses mouvements du mois et les écarts entre prévu et réel.</p>`;
+  return h;
+}
+function animateFlow(){
+  const els=[...document.querySelectorAll(".flowc .fill")], big=document.querySelector(".flowc [data-count]");
+  if(!els.length) return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){ settleFlow(); return; }
+  els.forEach(e=>{ e.style.transition="none"; e.style.width="0"; }); void document.body.offsetWidth;
+  requestAnimationFrame(()=>{ els.forEach(e=>{ e.style.transition="width 1.3s cubic-bezier(.2,.8,.2,1)"; e.style.width=e.dataset.w+"%"; }); });
+  if(big){ const target=+big.dataset.count, t0=performance.now(); (function step(t){ const k=Math.min(1,(t-t0)/1300), e=1-Math.pow(1-k,3); big.textContent=sfmt(target*e,"EUR"); if(k<1) requestAnimationFrame(step); })(t0); }
+}
+function settleFlow(){ document.querySelectorAll(".flowc .fill").forEach(e=>{ e.style.transition="none"; e.style.width=e.dataset.w+"%"; }); }
 function periodBar(title,sub,prev,next){
   return `<div class="period"><button class="iconbtn" data-act="${prev}" aria-label="Précédent">${I.left}</button><h1>${esc(title)}${sub?`<small>${esc(sub)}</small>`:""}</h1><button class="iconbtn" data-act="${next}" aria-label="Suivant">${I.right}</button></div>`;
 }
@@ -899,23 +946,12 @@ function viewMonth(){
   const rate=c.hasRate?c.rA:c.rP;
   const expA=c.A.fixed+c.A.variable+c.A.special+c.A.fees, expP=c.P.fixed+c.P.variable+c.P.special+c.P.fees, epct=expP>0?expA/expP:0;
   const nExp=c.tx.filter(t=>t.kind==="expense").length;
-  h+=`<div class="duo" style="margin-top:12px">
-    <button class="card duo-c" data-act="openIncomes"><span class="ic">${I.in}</span><span class="eyebrow">Revenus du mois</span><b>${fmt(incChf,"CHF")}</b><small>≈ ${fmt(incChf*rate+incEur,"EUR")}</small><small>au taux ${c.hasRate?"du transfert":"prévu"} ${rate.toFixed(4).replace(".",",")}${incEur?` · dont ${fmt(incEur,"EUR")} en €`:""}</small><span class="go">Voir le détail</span></button>
-    <button class="card duo-c" data-act="openExpenses"><span class="ic">${I.basket}</span><span class="eyebrow">Dépenses du mois</span><b>${fmt(expA,"EUR")}</b><small>prévu ${fmt(expP,"EUR")} · ${nExp} opération${nExp>1?"s":""}</small><div class="bar"><i class="${epct>1?"over":epct>.85?"near":""}" style="width:${Math.min(100,epct*100).toFixed(1)}%"></i></div><span class="go">Voir la liste</span></button>
+  const future=ym>CUR_YM, incE=future?c.P.income:c.A.income, outE=future?expP:expA, rest=incE-outE, mx=Math.max(1,incE,expP,expA);
+  h+=`<div class="card flowc" style="margin-top:12px"><span class="eyebrow">${future?"Prévu ce mois-là":"Ce mois-ci"}</span>
+    <div class="big ${cls(rest)}" data-count="${rest.toFixed(2)}">${sfmt(rest,"EUR")}</div><div class="mut" style="font-size:13px;margin-top:-4px">reste après dépenses</div>
+    <button class="fl" data-act="openIncomes"><span class="fl-h"><span>Revenus</span><b class="pos">${fmt(incE,"EUR")}</b></span><span class="trk"><i class="fill" data-w="${(incE/mx*100).toFixed(1)}" style="background:var(--pos)"></i></span><small>${incChf?`${fmt(incChf,"CHF")} au taux ${rate.toFixed(4).replace(".",",")}${c.hasRate?" (transfert du mois)":" (prévu)"}`:"aucun revenu reçu pour l'instant"}${incEur?` · dont ${fmt(incEur,"EUR")} en €`:""}</small></button>
+    <button class="fl" data-act="openExpenses"><span class="fl-h"><span>Dépenses</span><b style="color:var(--accent)">${fmt(outE,"EUR")} <span class="mut" style="font-weight:600">/ ${fmt(expP,"EUR")} prévu</span></b></span><span class="trk"><i class="fill" data-w="${(outE/mx*100).toFixed(1)}" style="background:${expA>expP&&expP>0?"var(--neg)":"var(--accent)"}"></i>${expP>0?`<b class="mk" style="left:${(expP/mx*100).toFixed(1)}%"></b>`:""}</span><small>${nExp} opération${nExp>1?"s":""} · le trait indique le prévu</small></button>
   </div>`;
-  // comptes + disponible
-  const avail=cfg.accounts.filter(a=>!a.savings);
-  const sumEnd=cur=>avail.filter(a=>a.cur===cur).reduce((x,a)=>x+(endBalance(a.id,ym)||0),0);
-  const sumNow=cur=>avail.filter(a=>a.cur===cur).reduce((x,a)=>x+(ym===CUR_YM?balanceAt(a.id,TODAY):ym<CUR_YM?endBalance(a.id,ym):0),0);
-  h+=`<div class="accounts">${cfg.accounts.map(a=>{
-    const end=endBalance(a.id,ym);
-    const now= ym===CUR_YM?balanceAt(a.id,TODAY):ym<CUR_YM?end:null;
-    return `<button class="card acc" style="--c:${a.color}" data-act="openAcc" data-id="${a.id}"><div class="n"><span>${esc(a.name)}</span><span class="cur">${a.cur}</span></div>
-      <div class="lbl">${ym<CUR_YM?"Solde fin de mois":"Prévu fin de mois"}</div><div class="v ${end<0?"neg":""}">${isNaN(end)?"—":fmt(end,a.cur)}</div>
-      <div class="s">${now==null?"à venir":ym<CUR_YM?"réel":`actuel <b>${fmt(now,a.cur)}</b>`}</div></button>`;}).join("")}
-    <div class="card acc total" style="--c:var(--title)"><div class="n"><span>Disponible fin de mois</span></div><div class="lbl">tous comptes hors épargne</div>
-      <div class="v ${sumEnd("EUR")<0?"neg":""}">${fmt(sumEnd("EUR"),"EUR")}</div>${avail.some(a=>a.cur==="CHF")?`<div class="v ${sumEnd("CHF")<0?"neg":""}" style="font-size:15px">${sumEnd("CHF")<0?"":"+ "}${fmt(sumEnd("CHF"),"CHF")}</div>`:""}
-      ${ym<=CUR_YM?`<div class="s">actuel <b>${fmt(sumNow("EUR"),"EUR")}</b>${avail.some(a=>a.cur==="CHF")?` · <b>${fmt(sumNow("CHF"),"CHF")}</b>`:""}</div>`:""}</div></div>`;
   if(!cfg.plans.length&&!c.tx.length&&!c.occ.length){
     h+=`<div class="card empty" style="margin-top:22px"><h3>Pour commencer</h3><p>1. Renseigne le solde de tes comptes dans Réglages › Comptes.<br>2. Crée tes événements prévus (salaire, loyer, budgets…) dans Réglages › Créer un événement.<br>3. Au quotidien, ajoute tes opérations avec le bouton +.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="tab" data-tab="reglages">Aller aux Réglages</button></div></div>`;
     return h;
@@ -1576,7 +1612,6 @@ function sheetAccEdit(s){
   h+=fld("Nom du compte",inp("name","text",'placeholder="Livret A"'));
   h+=fld("Monnaie",isNew||!accUsed(d.id)?segF("cur",[["EUR","Euro (€)"],["CHF","Franc suisse (CHF)"]]):`<div class="mut" style="font-size:14px">${d.cur} · ne peut plus être changée (compte déjà utilisé)</div>`);
   h+=`<div class="grid2">${fld(`Solde de départ (${d.cur})`,inp("bal","text",'inputmode="decimal" placeholder="0"'))}${fld("Au début du",inp("balDate","date"))}</div>`;
-  h+=fld("Type de compte",segF("savings",[["0","Disponible"],["1","Épargne"]]),"L'épargne n'est pas comptée dans « Disponible fin de mois ».");
   h+=fld("Couleur",`<div class="swatches">${PALETTE.map(c=>`<button type="button" class="sw ${d.color===c?"on":""}" style="--c:${c}" data-act="set" data-f="color" data-v="${c}" aria-label="Couleur ${c}"></button>`).join("")}</div>`);
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
   h+=`</div><div class="actions"><button class="btn primary block" data-act="saveAccount">${isNew?"Ajouter le compte":"Enregistrer"}</button>${!isNew?`<button class="btn danger block" data-act="delAccount">Supprimer le compte</button>`:""}</div>`;
@@ -1707,8 +1742,8 @@ document.addEventListener("click",async e=>{
   const act=a.dataset.act, s=topS();
   switch(act){
     case "tab": ui.tab=a.dataset.tab; try{localStorage.setItem(LS+".tab",ui.tab)}catch(x){} render(); window.scrollTo(0,0); break;
-    case "prevM": ui.ym=addMonths(ui.ym,-1); render(); break;
-    case "nextM": ui.ym=addMonths(ui.ym,1); render(); break;
+    case "prevM": ui.ym=addMonths(ui.ym,-1); ui.anim=true; render(); break;
+    case "nextM": ui.ym=addMonths(ui.ym,1); ui.anim=true; render(); break;
     case "prevY": ui.year--; render(); break;
     case "nextY": ui.year++; render(); break;
     case "goMonth": ui.ym=a.dataset.ym; ui.tab="mois"; render(); window.scrollTo(0,0); break;
