@@ -464,7 +464,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.0 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.1 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
 </div></header>
 
@@ -488,7 +488,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.0";
+const VERSION = "3.1";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -1594,18 +1594,21 @@ function sheetOccAct(s){
   const c=calcMonth(s.ym); let r=c.pointRows.find(x=>x.o.key===s.key); const sk=!r?skippedRows(c,"expense").concat(skippedRows(c,"transfer")).find(x=>x.o.key===s.key):null;
   r=r||sk; if(!r) return sheetHead("Introuvable")+`<div class="acts"><button class="btn block" data-act="back">Retour</button></div>`;
   const p=r.o.p, isT=p.kind==="transfer", cross=isT&&curOf(p.from)!==curOf(p.to);
-  let h=sheetHead(esc(r.o.label),isT?`${esc(accName(p.from))} → ${esc(accName(p.to))}`:esc(accName(p.acc)));
+  const pickAcc=!isT&&p.kind==="expense"&&!r.done&&!r.skipped;
+  if(pickAcc&&!(s.acc&&accById(s.acc))) s.acc=p.acc;
+  let h=sheetHead(esc(r.o.label),isT?`${esc(accName(p.from))} → ${esc(accName(p.to))}`:esc(r.done&&r.ts[0]?"prélevé sur "+accName(r.ts[0].acc):pickAcc?"prévu sur "+accName(p.acc):accName(p.acc)));
   h+=`<div class="occhead"><b>${fmt(r.done?r.actual:r.planned,r.cur)}</b><small>${r.done?`confirmé le ${shortDate(r.ts[0].date)} · prévu ${fmt(r.planned,r.cur)}`:r.skipped?"échéance annulée pour ce mois":`prévu ${p.noDate?"dans le mois":"le "+shortDate(r.o.date)}`}</small></div><div class="acts">`;
   if(r.skipped) h+=`<button class="btn primary block" data-act="occUnskip">Rétablir cette échéance</button>`;
   else if(r.done) h+=`<button class="btn danger block" data-act="occUnconfirm">Annuler la confirmation</button><button class="btn block" data-act="occEdit">Modifier le montant</button>`;
   else if(cross) h+=`<button class="btn primary block" data-act="occChf">Confirmer le transfert (montant reçu)</button><button class="btn block" data-act="occSkip">Pas ce mois-ci</button>`;
-  else h+=`<button class="btn primary block" data-act="occConfirm">${isT?"Confirmer le virement":p.kind==="income"?"Confirmer la réception":"Confirmer le prélèvement"}</button><button class="btn block" data-act="occOther">Confirmer avec un autre montant</button><button class="btn block" data-act="occSkip">Pas ce mois-ci</button>`;
+  else { if(pickAcc){ const opts=cfg.accounts.filter(a=>a.cur===curOf(p.acc)); h+=`<div class="q" style="margin:4px 0 8px">Sur quel compte est-ce prélevé ?</div><div class="chips" style="margin-bottom:12px">${opts.map(a=>`<button type="button" class="chipbtn ${s.acc===a.id?"on":""}" style="--c:${a.color}" data-act="occAcc" data-v="${a.id}"><span class="cdot" style="--c:${a.color}"></span>${esc(a.name)}</button>`).join("")}</div>`; }
+  h+=`<button class="btn primary block" data-act="occConfirm">${isT?"Confirmer le virement":p.kind==="income"?"Confirmer la réception":"Confirmer le prélèvement"}</button><button class="btn block" data-act="occOther">Confirmer avec un autre montant</button><button class="btn block" data-act="occSkip">Pas ce mois-ci</button>`; }
   h+=`<button class="btn ghost block" data-act="back">Retour</button></div>`;
   return h;
 }
-function confirmOcc(o){
+function confirmOcc(o,acc){
   const p=o.p, t={id:uid8(),date:p.noDate?(o.date.slice(0,7)===CUR_YM?TODAY:o.date):o.date,kind:p.kind,label:o.label,persons:personsOf(p).slice(),personOther:p.personOther||"",link:o.key};
-  if(p.kind==="transfer") Object.assign(t,{from:p.from,to:p.to,nature:"fixe"},planTransferAmounts(p)); else Object.assign(t,{amount:o.amount!=null?o.amount:p.amount,acc:p.acc,cat:p.cat,sub:p.sub||"",sub2:p.sub2||"",nature:p.nature||"fixe"});
+  if(p.kind==="transfer") Object.assign(t,{from:p.from,to:p.to,nature:"fixe"},planTransferAmounts(p)); else Object.assign(t,{amount:o.amount!=null?o.amount:p.amount,acc:acc&&accById(acc)&&p.kind==="expense"?acc:p.acc,cat:p.cat,sub:p.sub||"",sub2:p.sub2||"",nature:p.nature||"fixe"});
   const docs=new Set(); upsertTx(t,docs); changed([...docs]); return t;
 }
 function varListRows(c,special){ return c.varRows.filter(v=>isSpecialCat(catByName(v.cat))===special); }
@@ -2015,9 +2018,10 @@ document.addEventListener("click",async e=>{
     case "delSubEdit": { const c=cfg.categories.find(x=>x.id===s.cat), x=c&&c.subs.find(y=>y.id===s.id); if(!x) break; askConfirm("Supprimer ?",`« ${x.name} » sera retiré. Les dépenses déjà saisies sont conservées.`,"Supprimer",()=>{ c.subs=c.subs.filter(y=>y.id!==x.id); stack.splice(-2,2); changed(["config"]); if(stack.length) renderSheet(); else closeSheet(); toast("Supprimé"); }); break; }
     case "catYear": openSheet({type:"yearSeries",y:ui.year,cat:a.dataset.cat}); break;
     case "personYear": openSheet({type:"yearSeries",y:ui.year,id:a.dataset.id}); break;
+    case "occAcc": s.acc=a.dataset.v; renderSheet(); break;
     case "occAct": pushOrOpen({type:"occAct",ym:s?s.ym:ui.ym,key:a.dataset.key}); break;
-    case "occConfirm": { const o=findOcc(s.key); if(!o) break; const t=confirmOcc(o); popSheet(); toast(`« ${o.label} » confirmé`,()=>{ const dd=new Set(); removeTx(t.id,dd); changed([...dd]); if(stack.length) renderSheet(); }); break; }
-    case "occOther": { const o=findOcc(s.key); if(!o) break; const d=newWizard("tx"); d.date=o.p.noDate?(o.date.slice(0,7)===CUR_YM?TODAY:o.date):o.date; prefillFromOcc(d,o); d.step="amount"; pushSheet({type:"wizard",d}); break; }
+    case "occConfirm": { const o=findOcc(s.key); if(!o) break; const t=confirmOcc(o,s.acc); popSheet(); toast(`« ${o.label} » confirmé`,()=>{ const dd=new Set(); removeTx(t.id,dd); changed([...dd]); if(stack.length) renderSheet(); }); break; }
+    case "occOther": { const o=findOcc(s.key); if(!o) break; const d=newWizard("tx"); d.date=o.p.noDate?(o.date.slice(0,7)===CUR_YM?TODAY:o.date):o.date; prefillFromOcc(d,o); if(o.p.kind==="expense"&&s.acc&&accById(s.acc)) d.acc=s.acc; d.step="amount"; pushSheet({type:"wizard",d}); break; }
     case "occSkip": { cfg.skips=cfg.skips||{}; const sk=s.key.replace(/@(\d{4}-\d{2})-\d{2}$/,"@$1"); cfg.skips[sk]=true; popSheet(); changed(["config"]); toast("Échéance annulée pour ce mois",()=>{ delete cfg.skips[sk]; changed(["config"]); if(stack.length) renderSheet(); }); break; }
     case "occUnskip": { if(cfg.skips){ delete cfg.skips[s.key]; delete cfg.skips[s.key.replace(/@(\d{4}-\d{2})-\d{2}$/,"@$1")]; } popSheet(); changed(["config"]); toast("Échéance rétablie"); break; }
     case "occUnconfirm": { const r=calcMonth(s.ym).pointRows.find(x=>x.o.key===s.key); if(!r) break; askConfirm("Annuler la confirmation ?","L'opération enregistrée sera supprimée et l'échéance repassera « à venir ».","Annuler la confirmation",()=>{ const docs=new Set(); r.ts.forEach(t=>removeTx(t.id,docs)); stack.splice(-2,2); changed([...docs]); if(stack.length) renderSheet(); else closeSheet(); toast("Confirmation annulée"); }); break; }
