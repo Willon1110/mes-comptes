@@ -499,7 +499,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.5 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.6 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
@@ -524,7 +524,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.5";
+const VERSION = "3.6";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -1598,7 +1598,7 @@ function sheetWizard(s){
     const sp=c.special==="birthday"||c.special==="christmas", showNew=s.showNew||(!c.subs.length);
     h+=`<div class="quiet">${!sp||!c.subs.length?`<button class="lnk" data-act="wz" data-f="sub" data-v="">Continuer sans ${sp?"choisir":"sous-catégorie"}</button>`:""}${!showNew?`<button class="lnk" data-act="wzShowNew">+ ${c.special==="birthday"?"Ajouter un anniversaire":c.special==="christmas"?"Ajouter une personne":"Nouvelle sous-catégorie"}</button>`:""}</div>`;
     if(showNew){ h+=`<h4>${c.special==="birthday"?"Ajouter un anniversaire":c.special==="christmas"?"Ajouter une personne":"Nouvelle sous-catégorie"}</h4><div class="form">`;
-    if(c.special==="birthday") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Léonard"'))}${fld("Date de naissance",inp("nsBirth","date",'data-bd="1"'))}</div>${fld("Budget cadeau (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="50"'))}`;
+    if(c.special==="birthday") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Léonard"'))}${fld("Date de naissance ou âge",inp("nsBirth","date",'data-bd="1"'))}</div>${fld("Budget cadeau (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="50"'))}`;
     else if(c.special==="christmas") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Mamie"'))}${fld("Budget (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="40"'))}</div>`;
     else h+=fld("Nom",inp("nsName","text",'placeholder="Ex. Boulangerie"'));
     h+=`<button class="btn" data-act="wzNewSub">Créer et choisir</button></div>`; }
@@ -2104,10 +2104,14 @@ function sheetCatEdit(s){
     const tb=c.subs.reduce((a,x)=>a+(+x.budget||0),0), tr=c.subs.reduce((a,x)=>a+spent(x.id,year),0);
     h+=`<div class="sumgrid" style="margin-top:14px"><div><span>Budget Noël ${year}</span><b>${fmt(tb,"EUR",0)}</b></div><div><span>Dépensé ${year}</span><b class="${tr>tb?"neg":""}">${fmt(tr,"EUR",0)}</b></div></div>`;
   }
-  h+=`<h4>${c.special==="birthday"?"Anniversaires":c.special==="christmas"?"Personnes":"Sous-catégories"} (${c.subs.length})</h4>${c.subs.length>1?`<p class="note" style="margin:-4px 0 8px">Appui long sur ≡ pour changer l'ordre${!c.special?", appui long sur une sous-sous-catégorie pour la déplacer":""}.</p>`:""}<div class="card pad" style="padding-top:2px;padding-bottom:2px" data-dgbox="sub:${c.id}">`;
+  h+=`<h4>${c.special==="birthday"?"Anniversaires":c.special==="christmas"?"Personnes":"Sous-catégories"} (${c.subs.length})</h4>${c.subs.length>1?`<p class="note" style="margin:-4px 0 8px">Appui long sur ≡ pour changer l'ordre${!c.special?", appui long sur une sous-sous-catégorie pour la déplacer":""}.</p>`:""}<div class="card ${c.special?"list":"pad"}" ${c.special?"":'style="padding-top:2px;padding-bottom:2px"'} data-dgbox="sub:${c.id}">`;
   if(!c.subs.length) h+=`<p class="note" style="margin:12px 0">Aucune pour l'instant.</p>`;
   c.subs.forEach(x=>{
     const key=`${c.id}:${x.id}`;
+    if(c.special){ const bd=c.special==="birthday", nb=bd?nextBirthday(x.birth):null, b=+x.budget||0, r=spent(x.id,year);
+      const meta=bd?(nb?`le ${shortDate(x.birth)} · ${ageOn(x.birth,nb)} ans en ${nb.slice(0,4)}`:"date de naissance à compléter"):"";
+      h+=`<div class="row" data-dg="s:${x.id}" data-dgh="1">${c.subs.length>1?`<span class="grip" aria-hidden="true">≡</span>`:""}<button class="main" style="background:none;border:0;padding:0;text-align:left;min-width:0" data-act="editSub" data-cat="${c.id}" data-id="${x.id}"><div class="l">${esc(x.name)}</div>${meta?`<div class="m">${esc(meta)}</div>`:""}${x.gift?`<div class="m gift">🎁 ${esc(x.gift)}</div>`:""}</button><button class="amt" style="background:none;border:0;padding:0" data-act="editSub" data-cat="${c.id}" data-id="${x.id}"><b>${b>0?fmt(b,"EUR"):"—"}</b><small class="${b>0&&r>b?"neg":""}">${b>0?(r>0?`dépensé ${fmt(r,"EUR")}`:"budget"):"sans budget"}</small></button>${I.right.replace('<svg','<svg width="16" height="16" style="flex:none;color:var(--muted)"')}</div>`;
+      return; }
     h+=`<div class="subed" data-dg="s:${x.id}" data-dgh="1"><div class="top">${c.subs.length>1?`<span class="grip" aria-hidden="true">≡</span>`:""}<input id="sb-${x.id}-n" data-sub="${key}:name" value="${esc(x.name)}" aria-label="Nom"><button class="mini" data-act="delSub" data-cat="${c.id}" data-id="${x.id}" aria-label="Supprimer ${esc(x.name)}">${I.trash}</button></div>`;
     if(c.special==="birthday"){ const nb=nextBirthday(x.birth); h+=`<div class="grid2">${fld("Date de naissance",`<input id="sb-${x.id}-b" type="date" data-bd="1" data-sub="${key}:birth" value="${esc(x.birth||"")}">`)}${fld("Budget cadeau (€)",`<input id="sb-${x.id}-u" inputmode="decimal" data-sub="${key}:budget" value="${esc(numStr(x.budget))}" placeholder="0">`)}</div><small class="mut">${nb?`${ageOn(x.birth,nb)} ans le ${longDate(nb)} · dépensé ${year} : ${fmt(spent(x.id,year),"EUR",0)}`:"Ajoute la date pour le rappel annuel et l'âge."}</small>`; }
     if(!c.special){ h+=`<div class="chips" style="margin-top:2px" data-dgbox="sub2:${c.id}:${x.id}">${(x.subs||[]).map(y=>`<span class="cat" data-dg="s2:${y.id}">${esc(y.name)}<button data-act="delSub2" data-cat="${c.id}" data-sub="${x.id}" data-id="${y.id}" aria-label="Supprimer ${esc(y.name)}">×</button></span>`).join("")}</div><div style="display:flex;gap:8px"><input id="ns2-${x.id}" placeholder="Ajouter une sous-sous-catégorie" aria-label="Nouvelle sous-sous-catégorie de ${esc(x.name)}"><button class="btn sm" data-act="addSub2" data-cat="${c.id}" data-id="${x.id}">Ajouter</button></div>`; }
@@ -2116,7 +2120,7 @@ function sheetCatEdit(s){
     h+=`</div>`;
   });
   h+=`</div><h4>${c.special==="birthday"?"Ajouter un anniversaire":c.special==="christmas"?"Ajouter une personne":"Ajouter une sous-catégorie"}</h4><div class="form">`;
-  if(c.special==="birthday") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Léonard"'))}${fld("Date de naissance",inp("nsBirth","date",'data-bd="1"'))}</div>${fld("Budget cadeau (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="50"'))}`;
+  if(c.special==="birthday") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Léonard"'))}${fld("Date de naissance ou âge",inp("nsBirth","date",'data-bd="1"'))}</div>${fld("Budget cadeau (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="50"'))}`;
   else if(c.special==="christmas") h+=`<div class="grid2">${fld("Prénom",inp("nsName","text",'placeholder="Ingrid"'))}${fld("Budget (€)",inp("nsBudget","text",'inputmode="decimal" placeholder="60"'))}</div>`;
   else h+=fld("Nom",inp("nsName","text",'placeholder="Ex. Boulangerie"'));
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
