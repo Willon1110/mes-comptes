@@ -362,6 +362,22 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .pgb{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);min-height:112px}
 .pgb .ic{width:38px;height:38px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;margin-bottom:4px}.pgb .ic svg{width:20px;height:20px}
 .pgb b{font-size:14.5px;color:var(--ink);line-height:1.2}.pgb small{font-size:12px;color:var(--muted)}.pgb.empty{opacity:.6}.pgb small.neg{color:var(--neg)}
+#tour{position:fixed;inset:0;z-index:60;pointer-events:none}
+#tour .tback{position:absolute;inset:0;pointer-events:auto}
+#tour .tbub{pointer-events:auto}
+#tour .thole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(8,10,28,.74);pointer-events:none;outline:2px solid var(--ochre);transition:all .25s}
+#tour .tbub{position:fixed;left:16px;right:16px;max-width:420px;margin:0 auto;background:var(--surface);color:var(--ink);border-radius:18px;padding:14px 16px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+#tour .tbub small{color:var(--muted);font-weight:700;font-size:11.5px}
+#tour .tbub b{display:block;font-family:var(--display);font-size:20px;font-weight:600;color:var(--title);margin:2px 0 4px}
+#tour .tbub p{margin:0;font-size:14px;line-height:1.45}
+#tour .tact{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+.obhero{text-align:center;margin:6px 0 14px}.obhero .logo{margin:0 auto 10px;width:64px;height:64px;font-size:28px}.obhero p{margin:0;font-size:15px;line-height:1.5}
+.obi{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;flex:none}
+.obacc{margin-bottom:10px;border-left:5px solid var(--c)}.obacc:not(.on){opacity:.65}
+.obtop{display:flex;gap:10px;align-items:center}.obtop input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--accent)}
+.obrow{margin-bottom:10px}
+.grid3{display:grid;grid-template-columns:1.3fr 1.4fr .8fr;gap:8px;margin-top:8px}
+.meminp{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface);font:inherit;color:var(--ink)}
 .plq{display:flex;gap:8px;align-items:center;margin:0 0 10px}.plq input{flex:1}
 .hidden-q{display:none!important}
 .alertbtn{position:relative;width:42px;height:42px;border-radius:13px;border:1.5px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 18%,transparent);color:var(--ochre);display:grid;place-items:center;padding:0;flex:none}
@@ -505,7 +521,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.7 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.8 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
@@ -530,8 +546,13 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.7";
-const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
+const VERSION = "3.8";
+const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
+let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
+const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
+function members(){ return (typeof cfg!=="undefined"&&cfg&&Array.isArray(cfg.members))?cfg.members:[{id:"william",name:"William"},{id:"ingrid",name:"Ingrid"},{id:"leonard",name:"Léonard"}]; }
+function syncPersons(){ const m=members(); PERSONS=[["famille","Famille"],...m.map(x=>[x.id,x.name]),["autre","Autre"]]; TRIO=m.map(x=>x.id); }
+function personColor(id){ if(id==="famille") return "#2E3A7A"; if(id==="autre") return "#9A8466"; const i=members().findIndex(x=>x.id===id); return MEMBER_COLORS[(i<0?0:i)%MEMBER_COLORS.length]; }
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
 const PALETTE = ["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#A23E2E","#8A4F6D","#3F8A86","#9A8466"];
@@ -584,7 +605,7 @@ function defaultAccounts(){
     {id:"chf",name:"Compte CHF",cur:"CHF",bal:0,balDate:d,color:DEF_COLORS.chf},
     {id:"cash",name:"Enveloppe espèces",cur:"EUR",bal:0,balDate:d,color:DEF_COLORS.cash,cash:true}];
 }
-function defaultCfg(){ return {v:4,accounts:defaultAccounts(),planRate:1.06,planFee:0,categories:defaultCats(),plans:[]}; }
+function defaultCfg(){ return Object.assign({v:4,accounts:defaultAccounts(),planRate:1.06,planFee:0,categories:defaultCats(),plans:[]},LOCAL_ONLY?{members:[]}:{}); }
 function normCfg(c){
   if(!c) return defaultCfg();
   const out=Object.assign(defaultCfg(),c);
@@ -616,8 +637,8 @@ const accById = id => cfg.accounts.find(a=>a.id===id);
 const curOf = id => (accById(id)||{}).cur||"EUR";
 const accName = id => (accById(id)||{}).name||"Compte supprimé";
 const accColor = id => (accById(id)||{}).color||"#9A8466";
-const personName = id => (PERSONS.find(p=>p[0]===id)||[,"Famille"])[1];
-const TRIO=["william","ingrid","leonard"];
+const personName = id => (PERSONS.find(p=>p[0]===id)||[,"Ancienne personne"])[1];
+let TRIO=["william","ingrid","leonard"];
 function personShares(t){ const ps=personsOf(t); if(!ps.length) return []; const out={}; ps.forEach(p=>{ if(p==="famille") TRIO.forEach(q=>{ out[q]=(out[q]||0)+1/ps.length/3; }); else out[p]=(out[p]||0)+1/ps.length; }); return Object.entries(out); }
 const involves = (t,id) => { const ps=personsOf(t); return ps.includes(id)||(TRIO.includes(id)&&ps.includes("famille")); };
 const STAT_PERSONS = () => PERSONS.filter(p=>p[0]!=="famille");
@@ -809,7 +830,7 @@ function endBalance(acc,ym){
 }
 
 /* ---------- stockage : Supabase + chiffrement de bout en bout ---------- */
-const CONF_KEY="mc.conf", CACHE_KEY="mc.cache", BIO_KEY="mc.bio", KDF_ITER=600000;
+const CONF_KEY="mc.conf", CACHE_KEY="mc.cache", BIO_KEY=LOCAL_ONLY?"mcl.bio":"mc.bio", KDF_ITER=600000;
 let sb=null, S={uid:null,email:"",key:null,salt:"",iter:KDF_ITER,version:0,dirty:false,saving:false,remember:true}, saveT=null, retryT=null;
 const b64=buf=>{ const u=new Uint8Array(buf); let s=""; for(let i=0;i<u.length;i+=0x8000) s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000)); return btoa(s); };
 const unb64=s=>{ const bin=atob(s); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
@@ -831,14 +852,15 @@ const getCache=()=>{ try{ const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"n
 function putCache(enc,pending){ try{ localStorage.setItem(CACHE_KEY,JSON.stringify({uid:S.uid,salt:S.salt,iter:S.iter,iv:enc.iv,data:enc.data,version:S.version,pending:!!pending})); }catch(e){} }
 function localSave(){}
 function setSync(s){
-  if(["cloud","offline","loading"].includes(s)) mode=s;
-  const map={loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
+  if(["cloud","offline","loading","local"].includes(s)) mode=s;
+  const map={local:["ok","Enregistré sur ce téléphone"],loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
   const [c,l]=map[s]||map.offline; const d=document.getElementById("syncdot"), t=document.getElementById("synctxt"); if(d) d.className="dot "+c; if(t) t.textContent=l;
 }
 function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
 function scheduleSave(){ S.dirty=true; clearTimeout(saveT); saveT=setTimeout(doSave,700); }
 const isNetErr=e=>!navigator.onLine||/fetch|network|Failed to fetch|Load failed|NetworkError/i.test(String(e&&(e.message||e)));
 async function doSave(){
+  if(LOCAL_ONLY){ saveLocal(); return; }
   if(!S.key||!sb) return;
   if(S.saving){ S.dirty=true; return; }
   S.saving=true; S.dirty=false; setSync("saving");
@@ -871,7 +893,7 @@ function migrateData(){
   if(cfg.skips){ for(const k of Object.keys(cfg.skips)){ const m=k.match(/^(.*)@(\d{4}-\d{2})-\d{2}$/); if(m){ cfg.skips[m[1]+"@"+m[2]]=true; delete cfg.skips[k]; ch=true; } } }
   return ch;
 }
-function applyData(obj){ cfg=normCfg(obj&&obj.cfg); TX=(obj&&obj.TX)||{}; memo.clear(); render(); }
+function applyData(obj){ cfg=normCfg(obj&&obj.cfg); TX=(obj&&obj.TX)||{}; syncPersons(); memo.clear(); render(); }
 async function refreshFromRemote(){
   if(!sb||!S.key||S.dirty||S.saving) return;
   try{ const row=await fetchVault(); if(row&&row.version>S.version){ if(row.salt!==S.salt){ await lockKeyAway(); return; } const obj=await decryptData(S.key,row.iv,row.data); applyData(obj); S.version=row.version; putCache({iv:row.iv,data:row.data},false); } setSync("cloud"); }
@@ -928,6 +950,7 @@ function renderGate(){
 const FR_ERR=m=>{ m=String(m||""); if(/Invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect."; if(/Email not confirmed/i.test(m)) return "Ton e-mail n'est pas confirmé. Dans Supabase, coche « Auto Confirm User » ou confirme l'utilisateur."; if(/Invalid TOTP|invalid.*code|expired/i.test(m)) return "Code incorrect ou expiré."; if(/rate limit/i.test(m)) return "Trop de tentatives. Patiente quelques minutes."; if(isNetErr(m)) return "Pas de connexion internet."; if(/JWT|Invalid API key|apikey/i.test(m)) return "Clé publique ou URL incorrecte (Réglages de connexion)."; return m||"Erreur inconnue."; };
 async function boot(){
   if(!window.isSecureContext||!window.crypto||!crypto.subtle){ gate("error","Cette page doit être ouverte en https (GitHub Pages) pour pouvoir chiffrer tes données."); return; }
+  if(LOCAL_ONLY){ bootLocal(); return; }
   const conf=getConf(); if(!conf){ gate("setup"); return; }
   if(!window.supabase||!window.supabase.createClient){ const ok=await loadSupabaseLib(); if(!ok){ gate("nolib"); return; } }
   try{ sb=window.supabase.createClient(conf.url,conf.anon,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"mc-auth",detectSessionInUrl:false}}); }
@@ -1355,7 +1378,7 @@ const YB={
     ${yAxis(Y,118)}</svg><div class="balleg">${accs.map(a=>{ const b=endBalance(a.id,Y.rows[11].ym); return `<div><span><i style="background:${a.color}"></i>${esc(a.name)}</span><b class="${isFinite(b)&&b<0?"neg":""}">${isFinite(b)?fmt(b,a.cur):"—"}</b></div>`; }).join("")}<small class="mut">fin ${monthName(Y.rows[11].ym)}${Y.lastReal<11?" (prévu)":""}</small></div></div>`); }},
   people:{name:"Personnes",desc:"anneau et fiches par personne",def:true,render(Y){
     const ppl={}, pcat={}; Y.real.forEach(r=>{ for(const k in r.c.A.people) if(k!=="none") ppl[k]=(ppl[k]||0)+r.c.A.people[k]; r.c.tx.filter(t=>t.kind==="expense").forEach(t=>{ personShares(t).forEach(([pid,f])=>{ const m=pcat[pid]=pcat[pid]||{}; m[t.cat]=(m[t.cat]||0)+conv(t.amount,curOf(t.acc),r.c.rA)*f; }); }); });
-    const PC={famille:"#2E3A7A",william:"#C2603A",ingrid:"#C98F33",leonard:"#6F8B4E",autre:"#9A8466"};
+    const PC=new Proxy({},{get:(o,k)=>personColor(k)});
     const pk=STAT_PERSONS().map(([id,n])=>({id,n,v:ppl[id]||0})).filter(x=>x.v>0), ptot=pk.reduce((x,p)=>x+p.v,0);
     if(!pk.length) return ySec("Personnes","dépenses attribuées",`<div class="card pad"><p class="note" style="margin:0">Aucune dépense attribuée à une personne cette année.</p></div>`);
     const nM=Math.max(1,Y.real.length); let off=0; const C=2*Math.PI*45;
@@ -1502,8 +1525,10 @@ function viewSettings(){
     <button class="card navcard" data-act="openPlans"><span class="ic">${I.fixed}</span><div class="main"><b>Événements prévus</b><small>${cfg.plans.length} événement${cfg.plans.length>1?"s":""} · modifier ou supprimer</small></div>${I.right}</button>
     <button class="card navcard" data-act="openCats"><span class="ic">${I.tag}</span><div class="main"><b>Gérer les catégories</b><small>${cfg.categories.length} catégories · sous-catégories, anniversaires, Noël</small></div>${I.right}</button>
     <button class="card navcard" data-act="openAccounts"><span class="ic">${I.bank}</span><div class="main"><b>Comptes</b><small>${cfg.accounts.map(a=>`<span class="cdot" style="--c:${a.color}"></span>`).join("")} ${cfg.accounts.length} comptes · noms, soldes, couleurs</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openMembers"><span class="ic">${I.people}</span><div class="main"><b>Personnes du foyer</b><small>${members().length?esc(members().map(m=>m.name).join(", ")):"personne pour l'instant"}</small></div>${I.right}</button>
     <button class="card navcard" data-act="openYearCfg"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M10 20V5M15 20v-6M20 20V8"/></svg></span><div class="main"><b>Récap de l'année</b><small>${(()=>{ const L=yLayout(); return L.tiles.filter(x=>x.on).length+" tuiles · "+L.blocks.filter(x=>x.on).length+" graphiques affichés"; })()} · ordre et aperçu</small></div>${I.right}</button>
-    <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>Compte, sauvegarde et sécurité</b><small>Connexion, double authentification, code, empreinte, fichiers de sauvegarde</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>${LOCAL_ONLY?"Sauvegarde et sécurité":"Compte, sauvegarde et sécurité"}</b><small>${LOCAL_ONLY?"Fichiers de sauvegarde, code, empreinte":"Connexion, double authentification, code, empreinte, fichiers de sauvegarde"}</small></div>${I.right}</button>
+    <button class="card navcard" data-act="startTour"><span class="ic">${I.spark}</span><div class="main"><b>Revoir le tutoriel</b><small>La visite guidée de l'appli, écran par écran</small></div>${I.right}</button>
   </div>`;
   h+=`<p class="note" style="text-align:center;margin-top:22px">Mes Comptes v${VERSION}</p>`;
   return h;
@@ -1518,7 +1543,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub,extra){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3>${extra||""}<button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); if(s.type==="plans"&&s.search&&s.q) filterPlans(s.q); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1709,7 +1734,7 @@ function incomeRows(ym){
   ["Salaire","Allocations"].forEach(cat=>{
     if(rows.some(r=>r.cat===cat)) return;
     const tx=(TX[ym]||[]).find(t=>t.kind==="income"&&t.cat===cat&&!t.link)||null;
-    rows.push({key:"virt:"+cat,label:cat,acc:tx?tx.acc:chfAcc(),cat,sub:"",person:cat==="Allocations"?"leonard":"william",planned:null,tx,link:null});
+    rows.push({key:"virt:"+cat,label:cat,acc:tx?tx.acc:chfAcc(),cat,sub:"",person:cat==="Allocations"?((members()[2]||members()[0]||{}).id||"famille"):((members()[0]||{}).id||"famille"),planned:null,tx,link:null});
   });
   return rows;
 }
@@ -2031,9 +2056,10 @@ function sheetAccEdit(s){
 
 /* ----- catégories ----- */
 function sheetSecurity(){
-  let h=sheetHead("Compte, sauvegarde et sécurité");
+  let h=sheetHead(LOCAL_ONLY?"Sauvegarde et sécurité":"Compte, sauvegarde et sécurité");
   const bio=!!localStorage.getItem(BIO_KEY);
-  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Compte et sécurité</h2></div><div class="card list">
+  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Où sont tes données ?</h2></div><div class="card pad"><p style="margin:0 0 8px">Uniquement dans le navigateur de ce téléphone : rien n'est envoyé sur internet.</p><p class="note" style="margin:0">Si tu effaces les données du navigateur, changes ou perds ton téléphone, elles disparaissent. Télécharge régulièrement une sauvegarde ci-dessous et garde-la dans tes fichiers (iCloud Drive, Google Drive…). Pour passer sur un autre téléphone : ouvre l'appli dessus et choisis « J'ai déjà une sauvegarde ».</p></div></section>`;
+  else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Compte et sécurité</h2></div><div class="card list">
     <div class="row"><div class="main"><div class="l">${esc(S.email||"Compte")}</div><div class="m">Données chiffrées de bout en bout · ${mode==="cloud"?"synchronisées":"hors ligne"}</div></div><button class="btn sm" data-act="gLogout">Déconnexion</button></div>
     <button class="row" data-act="openMfa"><div class="main"><div class="l">Double authentification</div><div class="m">Code à 6 chiffres en plus du mot de passe</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
     <button class="row" data-act="openPass"><div class="main"><div class="l">Phrase secrète</div><div class="m">Changer la phrase qui chiffre tes données</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
@@ -2044,16 +2070,17 @@ function sheetSecurity(){
     <div class="grid2"><button class="btn" data-act="pinChange">Changer le code</button><button class="btn danger" data-act="pinOff">Désactiver</button></div>
     ${bio?`<button class="btn" data-act="bioOff">Désactiver l'empreinte / Face ID ici</button>`:`<button class="btn" data-act="bioOn">Activer l'empreinte / Face ID sur ce téléphone</button>`}
     <button class="btn" data-act="pinLock">Verrouiller maintenant</button>`
-    :`<p class="note" style="margin:0">Demande un code (et si tu veux ton empreinte ou Face ID) à l'ouverture. Le code est le même sur tous tes appareils.</p><button class="btn primary" data-act="pinSet">Activer un code</button>`}</div></div></section>`;
+    :`<p class="note" style="margin:0">Demande un code (et si tu veux ton empreinte ou Face ID) à l'ouverture. ${LOCAL_ONLY?"":"Le code est le même sur tous tes appareils."}</p><button class="btn primary" data-act="pinSet">Activer un code</button>`}</div></div></section>`;
   const lb=cfg.lastBackup;
   h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Fichiers de sauvegarde</h2><div class="t">${lb?"dernier : "+longDate(lb):"aucun pour l'instant"}</div></div><div class="card pad"><div class="form">
-    <p class="note" style="margin:0">Tes données sont dans ta base Supabase, chiffrées. Garde aussi un fichier chez toi (iCloud Drive, Google Drive, Fichiers). Attention : ce fichier n'est pas chiffré, range-le dans un endroit sûr.</p>
+    <p class="note" style="margin:0">${LOCAL_ONLY?"C'est ta seule copie de secours : télécharge-la au moins une fois par mois.":"Tes données sont dans ta base Supabase, chiffrées. Garde aussi un fichier chez toi (iCloud Drive, Google Drive, Fichiers)."} Attention : ce fichier n'est pas chiffré, range-le dans un endroit sûr.</p>
     <button class="btn primary" data-act="dlBackup">Télécharger la sauvegarde complète (.json)</button>
     <button class="btn" data-act="dlCsv">Exporter les opérations pour Excel (.csv)</button>
     <label class="btn" for="fileIn" style="cursor:pointer">Restaurer depuis un fichier .json</label>
     <input type="file" id="fileIn" accept=".json,application/json,text/plain" style="display:none"></div></div></section>`;
   const conf=getConf();
-  h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion Supabase</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">${esc(conf?conf.url:"")}</p><button class="btn block" data-act="gChangeBase">Changer de base Supabase</button></div></section>`;
+  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Repartir de zéro</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">Efface toutes les données de ce téléphone et relance l'assistant de départ. Télécharge une sauvegarde avant !</p><button class="btn danger block" data-act="wipeLocal">Effacer toutes les données</button></div></section>`;
+  else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion Supabase</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">${esc(conf?conf.url:"")}</p><button class="btn block" data-act="gChangeBase">Changer de base Supabase</button></div></section>`;
   return h;
 }
 function sheetSubEdit(s){
@@ -2257,7 +2284,7 @@ document.addEventListener("click",async e=>{
     case "prevY": ui.year--; render(); break;
     case "nextY": ui.year++; render(); break;
     case "goMonth": ui.ym=a.dataset.ym; ui.tab="mois"; ui.anim=true; closeSheet(); render(); window.scrollTo(0,0); break;
-    case "close": closeSheet(); break;
+    case "close": if(stack.length&&topS().type==="onboard") break; closeSheet(); break;
     case "back": popSheet(); break;
     case "fab": if(loading()) break; openSheet({type:"wizard",d:newWizard("tx")}); break;
     case "newPlan": if(loading()) break; pushOrOpen({type:"wizard",d:newWizard("plan")}); break;
@@ -2346,6 +2373,19 @@ document.addEventListener("click",async e=>{
     case "planGroup": pushSheet({type:"plans",group:a.dataset.g}); break;
     case "planSearch": { s.search=!s.search; if(!s.search) s.q=""; renderSheet(); if(s.search) setTimeout(()=>{ const i=document.getElementById("planq"); if(i) i.focus(); },50); break; }
     case "planSearchClear": { s.q=""; const i=document.getElementById("planq"); if(i){ i.value=""; i.focus(); } filterPlans(""); break; }
+    case "openMembers": openSheet({type:"members",d:{nm:""}}); break;
+    case "addMember": { const n=String(s.d.nm||"").trim(); if(!n) break; const M=members().slice(); M.push({id:memberId(n),name:n}); setMembers(M); s.d.nm=""; renderSheet(); toast(n+" ajouté"); break; }
+    case "delMember": { const M=members(), x=M.find(m=>m.id===a.dataset.id); if(!x) break; askConfirm(`Retirer ${x.name} ?`,"Les opérations déjà attribuées gardent leur montant, mais n'auront plus de nom de personne.","Retirer",()=>{ setMembers(members().filter(m=>m.id!==x.id)); popSheet(); renderSheet(); }); break; }
+    case "startTour": startTour(); break;
+    case "wipeLocal": askConfirm("Tout effacer ?","Toutes tes données de ce téléphone seront supprimées définitivement. As-tu téléchargé une sauvegarde ?","Tout effacer",()=>{ try{ localStorage.removeItem(LOCAL_KEY); localStorage.removeItem(BIO_KEY); }catch(e){} location.reload(); }); break;
+    case "obNext": { const e=obValidate(s.d); if(e){ s.err=e; renderSheet(); break; } s.err=""; s.d.step++; renderSheet(); document.getElementById("sheet").scrollTop=0; break; }
+    case "obBack": s.err=""; s.d.step=Math.max(0,s.d.step-1); renderSheet(); break;
+    case "obAdd": { const l=a.dataset.l; if(l==="others") s.d.others.push(""); else if(l==="incomes") s.d.incomes.push({label:"",amount:"",acc:(s.d.accs.find(x=>x.on)||{}).id,day:"1"}); renderSheet(); break; }
+    case "obDel": s.d[a.dataset.l].splice(+a.dataset.i,1); renderSheet(); break;
+    case "obAddAcc": s.d.accs.push({id:uid8(),name:"Nouveau compte",cur:"EUR",on:true,bal:"",color:PALETTE[s.d.accs.length%PALETTE.length]}); renderSheet(); break;
+    case "obCur": s.d.accs[+a.dataset.i].cur=a.dataset.v; renderSheet(); break;
+    case "obFix": { const i=+a.dataset.i, f=OB_FIXED[i], cats=obCats(); s.d.fixed.push({label:f?f[0]:"",amount:"",acc:(s.d.accs.find(x=>x.on)||{}).id,day:"5",cat:f&&cats.includes(f[1])?f[1]:cats[0]}); renderSheet(); break; }
+    case "obDone": { obFinish(s.d); closeSheet(); if(a.dataset.v==="tour") setTimeout(startTour,250); else toast("C'est parti !"); break; }
     case "openYearCfg": openSheet({type:"yearCfg"}); break;
     case "yPrev": pushSheet({type:"yearPrev",id:a.dataset.id}); break;
     case "yTog": { if(yToggle(a.dataset.id)&&stack.length) renderSheet(); break; }
@@ -2509,7 +2549,7 @@ document.addEventListener("visibilitychange",()=>{
 
 function doRestore(j){
   if(!j||!j.cfg){ toast("Ce n'est pas une sauvegarde Mes Comptes valide."); return; }
-  askConfirm("Restaurer ?",`Les données actuelles seront remplacées par la sauvegarde du ${j.date?longDate(j.date):"?"}.`,"Restaurer",()=>{ closeSheet(); const old=Object.keys(TX); cfg=normCfg(j.cfg); TX=j.TX||{}; changed(["config",...old.map(k=>"tx-"+k),...Object.keys(TX).map(k=>"tx-"+k)]); toast("Sauvegarde restaurée"); });
+  askConfirm("Restaurer ?",`Les données actuelles seront remplacées par la sauvegarde du ${j.date?longDate(j.date):"?"}.`,"Restaurer",()=>{ closeSheet(); const old=Object.keys(TX); cfg=normCfg(j.cfg); cfg.onboarded=true; TX=j.TX||{}; syncPersons(); changed(["config",...old.map(k=>"tx-"+k),...Object.keys(TX).map(k=>"tx-"+k)]); toast("Sauvegarde restaurée"); });
 }
 function buildCsv(){
   const q=v=>{ const x=String(v??""); return /[;"\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x; };
@@ -2526,6 +2566,10 @@ function askOrDo(t,m,ok,run){ askConfirm(t,m,ok,run); }
 function await0(){ return false; }
 function pushOrOpen(x){ stack.length?pushSheet(x):openSheet(x); }
 document.addEventListener("submit",e=>{ const f=e.target.dataset&&e.target.dataset.gform; if(f){ e.preventDefault(); gateSubmit(f); } });
+function obSet(path,val){ const s=topS(); if(!s||s.type!=="onboard") return; const k=path.split("."); let o=s.d; for(let i=0;i<k.length-1;i++) o=o[k[i]]; o[k[k.length-1]]=val; }
+document.addEventListener("input",e=>{ const t=e.target; if(t.dataset&&t.dataset.ob&&t.type!=="checkbox") obSet(t.dataset.ob,t.value); });
+document.addEventListener("change",e=>{ const t=e.target; if(t.dataset&&t.dataset.ob){ obSet(t.dataset.ob,t.type==="checkbox"?t.checked:t.value); if(t.type==="checkbox"||t.tagName==="SELECT") renderSheet(); }
+  if(t.dataset&&t.dataset.mem){ const v=t.value.trim(), M=members().map(m=>m.id===t.dataset.mem?Object.assign({},m,{name:v||m.name}):m); setMembers(M); toast("Enregistré"); } });
 document.addEventListener("input",e=>{ if(e.target.id==="planq"){ const st=topS(); if(st) st.q=e.target.value; filterPlans(e.target.value); } });
 document.addEventListener("input",e=>{ const g=e.target.dataset&&e.target.dataset.g; if(g){ G.f[g]=e.target.type==="checkbox"?e.target.checked:e.target.value; } });
 document.addEventListener("change",e=>{ const t=e.target;
@@ -2557,7 +2601,7 @@ document.addEventListener("change",e=>{
     else if(field==="budget"){ const v=t.value.trim()===""?0:num(t.value); if(isNaN(v)||v<0){ toast("Budget invalide"); t.value=numStr(x.budget); return; } x.budget=r2(v); }
     changed(["config"]); renderSheet(); toast("Enregistré"); return;
   }
-  if(t.id==="fileIn"&&t.files&&t.files[0]){
+  if((t.id==="fileIn"||t.id==="obFile")&&t.files&&t.files[0]){
     const fr=new FileReader(); fr.onload=()=>{ let j; try{ j=JSON.parse(String(fr.result).replace(/^\ufeff/,"")); }catch(x){ toast("Ce fichier n'est pas une sauvegarde valide."); return; } doRestore(j); }; fr.onerror=()=>toast("Impossible de lire ce fichier."); fr.readAsText(t.files[0]); t.value=""; return;
   }
   const st=t.dataset&&t.dataset.set; if(!st) return;
@@ -2565,7 +2609,7 @@ document.addEventListener("change",e=>{
   else if(st==="planFee"){ const v=num(t.value); if(!(v>=0)){ toast("Frais invalides"); render(); return; } cfg.planFee=r2(v); }
   changed(["config"]); toast("Réglage enregistré");
 });
-document.addEventListener("keydown",e=>{ if(locked&&!G.view){ if(/^[0-9]$/.test(e.key)) lockKey(e.key); else if(e.key==="Backspace") lockKey("del"); e.preventDefault(); return; } if(e.key==="Escape"&&stack.length) closeSheet(); if(e.key==="Enter"&&e.target.tagName==="INPUT"&&stack.length){ const s=topS(); if(s.type==="wizard"&&s.d.step==="amount"){ e.preventDefault(); document.querySelector('[data-act="wzNext"]')?.click(); } } });
+document.addEventListener("keydown",e=>{ if(locked&&!G.view){ if(/^[0-9]$/.test(e.key)) lockKey(e.key); else if(e.key==="Backspace") lockKey("del"); e.preventDefault(); return; } if(e.key==="Escape"&&stack.length&&topS().type!=="onboard") closeSheet(); if(e.key==="Enter"&&e.target.tagName==="INPUT"&&stack.length){ const s=topS(); if(s.type==="wizard"&&s.d.step==="amount"){ e.preventDefault(); document.querySelector('[data-act="wzNext"]')?.click(); } } });
 
 
 /* ---------- calculette & calendrier ---------- */
@@ -2743,6 +2787,7 @@ document.addEventListener("pointermove",e=>{
 document.addEventListener("touchmove",e=>{ if(GD&&GD.active) e.preventDefault(); },{passive:false});
 function gdApply(box,ids){
   if(box==="yt"||box==="yb"||box==="lt"||box==="lb") return yApplyOrder(box,ids);
+  if(box==="mem"){ const M=members(), m=Object.fromEntries(M.map(x=>[x.id,x])), na=ids.map(x=>m[x.split(":")[1]]).filter(Boolean); if(na.length!==M.length) return false; setMembers(na); if(stack.length) renderSheet(); return true; }
   if(box==="acc"){ const m=Object.fromEntries(cfg.accounts.map(a=>[a.id,a])), na=ids.map(x=>m[x.split(":")[1]]).filter(Boolean); if(na.length!==cfg.accounts.length) return false; cfg.accounts=na; changed(["config"]); if(stack.length) renderSheet(); return true; }
   const [k,cid,sid]=box.split(":"), c=cfg.categories.find(x=>x.id===cid); if(!c) return false;
   const list=k==="sub"?c.subs:(c.subs.find(x=>x.id===sid)||{}).subs; if(!Array.isArray(list)) return false;
@@ -2767,6 +2812,134 @@ setSync("loading");
 render();
 renderGate();
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) refreshFromRemote(); });
+/* ---------- personnes du foyer ---------- */
+function sheetMembers(s){
+  const M=members();
+  let h=sheetHead("Personnes du foyer","Pour savoir pour qui sont les dépenses");
+  h+=`<p class="note" style="margin:0 0 8px">« Famille » partage une dépense à parts égales entre toutes ces personnes. Appui long sur ≡ pour changer l'ordre.</p>`;
+  h+=M.length?`<div class="card list" data-dgbox="mem">${M.map(m=>`<div class="row" data-dg="m:${m.id}" data-dgh="1">${M.length>1?`<span class="grip" aria-hidden="true">≡</span>`:""}<span class="cdot" style="--c:${personColor(m.id)};width:14px;height:14px"></span><input class="meminp" data-mem="${m.id}" value="${esc(m.name)}" aria-label="Prénom" style="flex:1;min-width:0"><button class="mini" data-act="delMember" data-id="${m.id}" aria-label="Retirer ${esc(m.name)}">${I.trash}</button></div>`).join("")}</div>`:`<p class="note">Personne pour l'instant.</p>`;
+  h+=`<h4>Ajouter une personne</h4><div class="form"><div style="display:flex;gap:8px">${inp("nm","text",'placeholder="Prénom" autocomplete="off"')}<button class="btn" data-act="addMember">Ajouter</button></div></div>`;
+  return h;
+}
+function memberId(name){ let b=norm(name).replace(/[^a-z0-9]+/g,"")||"p"; if(["famille","autre","none"].includes(b)) b+="1"; let id=b,i=2; const used=members().map(x=>x.id); while(used.includes(id)) id=b+(i++); return id; }
+function setMembers(M){ cfg.members=M; syncPersons(); changed(["config"]); }
+
+/* ---------- version vierge : données dans le navigateur ---------- */
+function saveLocal(){
+  try{ localStorage.setItem(LOCAL_KEY,JSON.stringify({app:"Mes Comptes",v:VERSION,cfg,TX})); S.dirty=false; setSync("local"); }
+  catch(e){ setSync("err"); toast("La mémoire du navigateur est pleine : télécharge une sauvegarde."); }
+}
+function bootLocal(){
+  let obj=null; try{ obj=JSON.parse(localStorage.getItem(LOCAL_KEY)||"null"); }catch(e){ obj=null; }
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  ui.anim=true; applyData(obj); if(obj&&migrateData()){ memo.clear(); render(); } hideGate(); setSync("local");
+  if(!obj||!cfg.onboarded) openOnboard();
+  else if(cfg.pin){ lockNow(); if(localStorage.getItem(BIO_KEY)) setTimeout(()=>bioUnlock(true),300); }
+}
+const OB_FIXED=[["Loyer","Logement"],["Crédit immobilier","Logement"],["Assurance","Assurances"],["Électricité","Logement"],["Internet","Abonnements"],["Téléphone","Abonnements"],["Abonnements","Abonnements"],["Crèche ou école","Enfant"]];
+function openOnboard(){
+  const accs=defaultAccounts().map(a=>({id:a.id,name:a.name,cur:a.cur,on:["cc","cash"].includes(a.id),bal:"",cash:!!a.cash,color:a.color}));
+  openSheet({type:"onboard",d:{step:0,name:"",others:[],accs,rate:String(cfg.planRate||1.06),incomes:[{label:"Salaire",amount:"",acc:"cc",day:"25"}],fixed:[]}});
+}
+function obCats(){ return catsOf("expense").filter(c=>!c.special&&!isSpecialCat(c)).map(c=>c.name); }
+function obAccOpts(d,sel){ return d.accs.filter(a=>a.on).map(a=>`<option value="${a.id}" ${sel===a.id?"selected":""}>${esc(a.name)} (${a.cur})</option>`).join(""); }
+function sheetOnboard(s){
+  const d=s.d, N=6, st=d.step;
+  let h=`<div class="grab"></div><div class="sh">${st>0?`<button class="iconbtn" data-act="obBack" aria-label="Retour">${I.left}</button>`:""}<h3>${["Bienvenue","Toi et ton foyer","Tes comptes","Tes revenus","Tes dépenses fixes","Tout est prêt"][st]}<small>Étape ${st+1} sur ${N}</small></h3></div><div class="steps">${[...Array(N)].map((_,i)=>`<i class="${i<=st?"on":""}"></i>`).join("")}</div>`;
+  if(st===0){
+    h+=`<div class="obhero"><div class="logo" aria-hidden="true">mc</div><p><b>Mes Comptes</b> t'aide à savoir chaque mois si tu finis dans le positif : ce qui est prévu, ce qui est passé, et ce qu'il reste.</p></div>
+    <div class="card list">
+      <div class="row"><span class="obi">1</span><div class="main"><div class="l">Tes données restent sur ce téléphone</div><div class="m">Rien n'est envoyé sur internet, personne d'autre ne les voit.</div></div></div>
+      <div class="row"><span class="obi">2</span><div class="main"><div class="l">Ajoute l'appli à ton écran d'accueil</div><div class="m">iPhone : bouton Partager › « Sur l'écran d'accueil ». Android : menu ⋮ › « Ajouter à l'écran d'accueil ». Ouvre-la toujours depuis cette icône.</div></div></div>
+      <div class="row"><span class="obi">3</span><div class="main"><div class="l">Fais une sauvegarde de temps en temps</div><div class="m">Réglages › Sauvegarde : un fichier à garder dans tes documents. C'est ta seule copie si tu changes de téléphone.</div></div></div>
+    </div>
+    <div class="actions"><button class="btn primary block" data-act="obNext">Commencer</button><label class="btn block" for="obFile" style="cursor:pointer">J'ai déjà une sauvegarde (.json)</label><input type="file" id="obFile" accept=".json,application/json,text/plain" style="display:none"></div>`;
+  } else if(st===1){
+    h+=`<div class="form">${fld("Ton prénom",`<input data-ob="name" value="${esc(d.name)}" placeholder="Ton prénom" autocomplete="given-name">`)}</div>
+    <h4>Les autres personnes du foyer <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:600">(facultatif)</span></h4><p class="note" style="margin:-4px 0 8px">Pour savoir pour qui sont les dépenses : conjoint, enfants… Tu pourras changer plus tard dans Réglages.</p>
+    <div class="form">${d.others.map((o,i)=>`<div style="display:flex;gap:8px"><input data-ob="others.${i}" value="${esc(o)}" placeholder="Prénom" style="flex:1"><button class="mini" data-act="obDel" data-l="others" data-i="${i}" aria-label="Retirer">${I.trash}</button></div>`).join("")}
+    <button class="btn" data-act="obAdd" data-l="others">+ Ajouter une personne</button></div>`;
+  } else if(st===2){
+    h+=`<p class="note" style="margin:0 0 10px">Coche les comptes que tu as et indique leur solde d'aujourd'hui (celui affiché par ta banque).</p>`;
+    d.accs.forEach((a,i)=>{ h+=`<div class="card pad obacc ${a.on?"on":""}" style="--c:${a.color}"><label class="obtop"><input type="checkbox" data-ob="accs.${i}.on" ${a.on?"checked":""}><input data-ob="accs.${i}.name" value="${esc(a.name)}" aria-label="Nom du compte" style="flex:1;min-width:0"></label>${a.on?`<div class="grid2" style="margin-top:8px">${fld("Devise",`<div class="seg">${["EUR","CHF"].map(c=>`<button type="button" data-act="obCur" data-i="${i}" data-v="${c}" class="${a.cur===c?"on":""}">${c==="EUR"?"€ euro":"CHF"}</button>`).join("")}</div>`)}${fld(`Solde aujourd'hui (${a.cur})`,`<input data-ob="accs.${i}.bal" inputmode="decimal" value="${esc(a.bal)}" placeholder="0">`)}</div>`:""}</div>`; });
+    h+=`<div class="actions" style="margin-top:4px"><button class="btn" data-act="obAddAcc">+ Ajouter un compte</button></div>`;
+    if(d.accs.some(a=>a.on&&a.cur==="CHF")) h+=`<div class="form" style="margin-top:6px">${fld("Taux prévu : 1 CHF = … €",`<input data-ob="rate" type="number" step="0.0001" min="0" value="${esc(d.rate)}">`,"Sert aux prévisions. Le vrai taux est calculé à chaque transfert CHF → €.")}</div>`;
+  } else if(st===3){
+    h+=`<p class="note" style="margin:0 0 10px">Ce que tu reçois chaque mois (salaire, allocations…). Tu confirmeras chaque mois quand c'est arrivé.</p>`;
+    d.incomes.forEach((r,i)=>{ h+=`<div class="card pad obrow"><div style="display:flex;gap:8px"><input data-ob="incomes.${i}.label" value="${esc(r.label)}" placeholder="Salaire" style="flex:1;min-width:0"><button class="mini" data-act="obDel" data-l="incomes" data-i="${i}" aria-label="Retirer">${I.trash}</button></div><div class="grid3">${fld("Montant",`<input data-ob="incomes.${i}.amount" inputmode="decimal" value="${esc(r.amount)}" placeholder="0">`)}${fld("Sur",`<select data-ob="incomes.${i}.acc">${obAccOpts(d,r.acc)}</select>`)}${fld("Le",`<input data-ob="incomes.${i}.day" type="number" min="1" max="31" value="${esc(r.day)}">`)}</div></div>`; });
+    h+=`<button class="btn block" data-act="obAdd" data-l="incomes">+ Ajouter un revenu</button>`;
+  } else if(st===4){
+    h+=`<p class="note" style="margin:0 0 10px">Ce qui est prélevé chaque mois, toujours du même montant. Touche une suggestion pour l'ajouter. Ce qui est déjà passé ce mois-ci commencera le mois prochain.</p><div class="chips" style="margin-bottom:10px">${OB_FIXED.map(([l],i)=>`<button type="button" class="chipbtn" data-act="obFix" data-i="${i}">+ ${esc(l)}</button>`).join("")}<button type="button" class="chipbtn" data-act="obFix" data-i="-1">+ Autre</button></div>`;
+    const cats=obCats();
+    d.fixed.forEach((r,i)=>{ h+=`<div class="card pad obrow"><div style="display:flex;gap:8px"><input data-ob="fixed.${i}.label" value="${esc(r.label)}" placeholder="Libellé" style="flex:1;min-width:0"><button class="mini" data-act="obDel" data-l="fixed" data-i="${i}" aria-label="Retirer">${I.trash}</button></div><div class="grid3">${fld("Montant",`<input data-ob="fixed.${i}.amount" inputmode="decimal" value="${esc(r.amount)}" placeholder="0">`)}${fld("Depuis",`<select data-ob="fixed.${i}.acc">${obAccOpts(d,r.acc)}</select>`)}${fld("Le",`<input data-ob="fixed.${i}.day" type="number" min="1" max="31" value="${esc(r.day)}">`)}</div>${fld("Catégorie",`<select data-ob="fixed.${i}.cat">${cats.map(c=>`<option ${r.cat===c?"selected":""}>${esc(c)}</option>`).join("")}</select>`)}</div>`; });
+    if(!d.fixed.length) h+=`<p class="note">Rien pour l'instant : tu pourras en ajouter plus tard dans Réglages › Créer un événement.</p>`;
+  } else {
+    const on=d.accs.filter(a=>a.on);
+    h+=`<div class="obhero"><div class="logo" aria-hidden="true">mc</div><p>Bravo${d.name?" "+esc(d.name.trim()):""} ! Ton appli est prête.</p></div>
+    <div class="card list"><div class="row"><div class="main"><div class="l">${on.length} compte${on.length>1?"s":""}</div><div class="m">${esc(on.map(a=>a.name).join(", "))}</div></div></div>
+    <div class="row"><div class="main"><div class="l">${d.incomes.filter(r=>num(r.amount)>0).length} revenu(s) et ${d.fixed.filter(r=>num(r.amount)>0).length} dépense(s) fixe(s)</div><div class="m">modifiables dans Réglages › Événements prévus</div></div></div></div>
+    <p class="note">Pour aller plus loin : les budgets des dépenses variables (courses, essence…), les anniversaires et Noël se créent dans Réglages.</p>`;
+  }
+  if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
+  if(st>0&&st<5) h+=`<div class="actions"><button class="btn primary block" data-act="obNext">Continuer</button></div>`;
+  if(st===5) h+=`<div class="actions"><button class="btn primary block" data-act="obDone" data-v="tour">Faire la visite guidée</button><button class="btn block" data-act="obDone" data-v="">Plus tard</button></div>`;
+  return h;
+}
+function obValidate(d){
+  if(d.step===1&&!String(d.name||"").trim()) return "Indique ton prénom.";
+  if(d.step===2){ if(!d.accs.some(a=>a.on)) return "Coche au moins un compte."; for(const a of d.accs.filter(a=>a.on)){ if(!String(a.name||"").trim()) return "Donne un nom à chaque compte."; if(String(a.bal).trim()&&isNaN(num(a.bal))) return `Solde invalide pour ${a.name}.`; } if(d.accs.some(a=>a.on&&a.cur==="CHF")&&!(num(d.rate)>0)) return "Indique le taux prévu CHF → €."; }
+  return "";
+}
+function obFinish(d){
+  const owner=String(d.name).trim(), names=[owner].concat(d.others.map(x=>String(x||"").trim()).filter(Boolean));
+  cfg.members=[]; names.forEach(n=>{ cfg.members.push({id:memberId(n),name:n}); }); syncPersons(); cfg.owner=owner;
+  cfg.accounts=d.accs.filter(a=>a.on).map(a=>{ const o={id:a.id,name:String(a.name).trim(),cur:a.cur,bal:r2(num(a.bal)||0),balDate:TODAY,color:a.color}; if(a.cash) o.cash=true; if(a.id==="ldd") o.savings=true; return o; });
+  if(d.accs.some(a=>a.on&&a.cur==="CHF")) cfg.planRate=+num(d.rate)||1.06;
+  const ok=id=>cfg.accounts.some(a=>a.id===id)?id:cfg.accounts[0].id, dd=v=>Math.min(28,Math.max(1,parseInt(v,10)||1)), when=v=>(dd(v)>=+TODAY.slice(8)?CUR_YM:addMonths(CUR_YM,1))+"-"+pad(dd(v));
+  const incCat=(cfg.categories.find(c=>catType(c)==="income")||{}).name||"Salaire";
+  d.incomes.filter(r=>num(r.amount)>0).forEach(r=>cfg.plans.push({id:uid8(),kind:"income",nature:"fixe",label:String(r.label||"").trim()||"Revenu",amount:r2(num(r.amount)),acc:ok(r.acc),cat:catByName(String(r.label||"").trim())&&catType(catByName(String(r.label).trim()))==="income"?String(r.label).trim():incCat,freq:"monthly",date:when(r.day),persons:cfg.members[0]?[cfg.members[0].id]:[]}));
+  d.fixed.filter(r=>num(r.amount)>0).forEach(r=>cfg.plans.push({id:uid8(),kind:"expense",nature:"fixe",label:String(r.label||"").trim()||r.cat,amount:r2(num(r.amount)),acc:ok(r.acc),cat:r.cat||obCats()[0],freq:"monthly",date:when(r.day),persons:[]}));
+  cfg.onboarded=true; changed(["config"]);
+}
+
+/* ---------- visite guidée ---------- */
+const TOUR=[
+  {tab:"mois",sel:".flowc",t:"Ton mois en un coup d'œil",x:"En haut : le résultat attendu à la fin du mois, puis tes revenus et dépenses comparés au prévu (le trait). Touche la carte pour le détail."},
+  {tab:"mois",sel:'.bento [data-act="openFixed"]',t:"Dépenses fixes",x:"Loyer, abonnements… Touche la tuile pour confirmer chaque prélèvement quand il passe sur ton compte. Une pastille rouge signale un retard."},
+  {tab:"mois",sel:".b-vb",t:"Dépenses variables",x:"Courses, essence, loisirs : une jauge par catégorie, comparée à ton budget. Vert ça va, orange attention, rouge dépassé."},
+  {tab:"mois",sel:".b-sp",t:"Spéciales",x:"Anniversaires, Noël et événements du mois, avec le budget qu'il reste. En décembre, elle se met aux couleurs de Noël."},
+  {tab:"mois",sel:".fab",t:"Ajoute ta première opération",x:"Touche le bouton + maintenant : choisis Dépense, la catégorie, le montant et le compte. La visite reprendra ensuite.",tap:true},
+  {tab:"mois",sel:"#alertbtn",t:"À vérifier",x:"Ce triangle apparaît s'il y a un doublon ou une incohérence dans le mois. Touche-le pour corriger.",optional:true},
+  {tab:"comptes",sel:".accounts",t:"Tes comptes",x:"Le solde de chaque compte, aujourd'hui ou prévu en fin de mois. Touche un compte pour son détail, appui long pour le déplacer."},
+  {tab:"annee",sel:".ytiles,.yblocks",t:"Ton année",x:"Tes chiffres clés et des graphiques. Appui long sur l'un d'eux pour le déplacer ou le masquer."},
+  {tab:"reglages",sel:'[data-act="openPlans"]',t:"Événements prévus",x:"Salaire, prélèvements, budgets, virements : tout ce qui revient se règle ici. Le gros bouton du dessus en crée un nouveau, pas à pas."},
+  {tab:"reglages",sel:'[data-act="openSecurity"]',local:true,t:"Pense à sauvegarder",x:"Tes données sont seulement sur ce téléphone. Télécharge une sauvegarde de temps en temps et garde-la dans tes fichiers."},
+  {tab:"reglages",sel:'[data-act="startTour"]',t:"À toi de jouer !",x:"Tu peux revoir cette visite à tout moment ici. Bonne gestion !"}];
+let TR=null;
+function startTour(){ closeSheet(); TR={i:0}; tourShow(); }
+function tourEnd(){ TR=null; const el=document.getElementById("tour"); if(el) el.remove(); }
+function tourSteps(){ return TOUR.filter(s=>!s.local||LOCAL_ONLY); }
+function tourShow(){
+  if(!TR) return; const L=tourSteps(), st=L[TR.i]; if(!st){ tourEnd(); return; }
+  if(st.tab&&ui.tab!==st.tab){ ui.tab=st.tab; render(); window.scrollTo(0,0); }
+  setTimeout(()=>{ if(!TR) return; const t=st.sel.split(",").map(x=>document.querySelector(x)).find(Boolean);
+    if(!t||!t.getClientRects().length){ TR.i++; tourShow(); return; }
+    if(getComputedStyle(t).position!=="fixed") t.scrollIntoView({block:"center",behavior:"instant"});
+    setTimeout(()=>tourDraw(t,st,L),200); },80);
+}
+function tourDraw(t,st,L){
+  if(!TR) return; let el=document.getElementById("tour"); if(!el){ el=document.createElement("div"); el.id="tour"; document.body.appendChild(el); }
+  const r=t.getBoundingClientRect(), pad=6, top=Math.max(4,r.top-pad), hh=Math.min(innerHeight-top-4,r.height+pad*2), below=r.top+r.height/2<innerHeight/2;
+  el.innerHTML=`<div class="tback" ${st.tap?'style="pointer-events:none"':""}></div><div class="thole" style="top:${top}px;left:${Math.max(4,r.left-pad)}px;width:${Math.min(innerWidth-8,r.width+pad*2)}px;height:${hh}px"></div>
+  <div class="tbub" role="dialog" aria-live="polite" style="${below?`top:${Math.min(innerHeight-220,top+hh+12)}px`:`bottom:${Math.min(innerHeight-220,innerHeight-top+12)}px`}"><small>${TR.i+1} / ${L.length}</small><b>${esc(st.t)}</b><p>${esc(st.x)}</p><div class="tact"><button class="btn sm ghost" data-tour="skip">${TR.i===L.length-1?"":"Arrêter la visite"}</button>${st.tap?`<button class="btn sm" data-tour="next">Passer cette étape</button>`:`<button class="btn sm primary" data-tour="next">${TR.i===L.length-1?"Terminer":"Suivant"}</button>`}</div></div>`;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-tour]"); if(b){ e.preventDefault(); e.stopPropagation(); if(b.dataset.tour==="skip") tourEnd(); else if(TR){ TR.i++; tourShow(); } return; }
+  if(TR&&!TR.waiting){ const st=tourSteps()[TR.i]; if(st&&st.tap&&e.target.closest(st.sel)){ TR.waiting=true; const el=document.getElementById("tour"); if(el) el.remove(); } }
+},true);
+setInterval(()=>{ if(TR&&TR.waiting&&!stack.length){ TR.waiting=false; TR.i++; tourShow(); } },500);
+addEventListener("resize",()=>{ if(TR&&!TR.waiting) tourShow(); });
+
 boot().catch(e=>gate("error",FR_ERR(e&&e.message)));
 </script>
 </body>
