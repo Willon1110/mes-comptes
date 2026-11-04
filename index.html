@@ -224,7 +224,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .vrow b{display:block}
 .vrow small{display:block;font-size:12px;color:var(--muted)}
 .vrow input{text-align:right;font-weight:700}
-.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:50;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:14px;font-weight:700;display:flex;gap:14px;align-items:center;transition:all .2s;pointer-events:none;max-width:92%}
+.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:50;background:var(--ink);color:var(--surface);padding:10px 14px;border-radius:12px;font-size:14px;font-weight:700;display:flex;gap:14px;align-items:center;transition:all .2s;pointer-events:none;max-width:92%}
 .toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
 .toast button{background:none;border:0;color:var(--ochre);font-weight:800;padding:0}
 .chart{padding:14px 10px 8px}
@@ -475,7 +475,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.3 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
@@ -500,7 +500,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.2";
+const VERSION = "3.3";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -1363,7 +1363,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3><button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1927,6 +1927,7 @@ function sheetCats(s){
   let h=sheetHead("Catégories","Touche pour modifier · appui long pour déplacer");
   const row=c=>`<button class="row" data-act="editCat" data-id="${c.id}" data-sid="${c.id}"><div class="main"><div class="l">${esc(c.name)} ${c.special?`<span class="chip acc">${c.special==="birthday"?"anniversaires":"Noël"}</span>`:""}</div><div class="m">${c.subs.length?esc(c.subs.map(x=>x.name).join(", ")):"Aucune sous-catégorie"}</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>`;
   h+=`<h4>Dépenses fixes et variables</h4><div class="card list">${catsOf("expense","x").map(row).join("")}</div><h4>Dépenses spéciales</h4><div class="card list">${catsOf("expense","special").map(row).join("")}</div><h4>Revenus</h4><div class="card list">${catsOf("income").map(row).join("")}</div>`;
+  { let pm=null; try{ pm=JSON.parse(localStorage.getItem(PREMERGE_KEY)||"null"); }catch(e){} if(pm&&pm.uid===S.uid) h+=`<div class="card pad" style="margin-top:12px;display:flex;gap:10px;align-items:center;justify-content:space-between"><small class="mut">Dernière fusion : ${esc(pm.label||"")} (${shortDate(pm.date)}). Une copie d'avant est gardée.</small><button class="btn sm" data-act="undoPremerge">Revenir avant</button></div>`; }
   h+=`<h4>Nouvelle catégorie</h4><div class="form">${segF("newType",[["expense","Dépense"],["special","Spéciale"],["income","Revenu"]])}<div style="display:flex;gap:8px">${inp("newCat","text",'placeholder="Ex. Vacances"')}<button class="btn" data-act="addCat">Créer</button></div></div>`;
   return h;
 }
@@ -1960,7 +1961,7 @@ function sheetCatEdit(s){
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
   h+=`<button class="btn" data-act="addSub">Ajouter</button></div>`;
   if(c.special) h+=`<p class="note">Avec un budget, ${c.special==="birthday"?"chaque anniversaire s'ajoute automatiquement au prévu du mois concerné, chaque année":"le budget de chaque personne s'ajoute au prévu de décembre, chaque année"}. Pour noter un cadeau, utilise + › Dépense › ${esc(c.name)} › la personne.</p>`;
-  h+=`<div class="actions"><button class="btn danger block" data-act="delCat" data-id="${c.id}">Supprimer la catégorie</button></div>`;
+  h+=`<div class="actions">${!c.special?`<button class="btn block" data-act="openMerge">Fusionner avec une autre catégorie…</button>${c.subs.length>1?`<button class="btn block" data-act="openMergeSub">Fusionner des sous-catégories…</button>`:""}`:""}<button class="btn danger block" data-act="delCat" data-id="${c.id}">Supprimer la catégorie</button></div>`;
   return h;
 }
 function makeSub(c,d){
@@ -1971,10 +1972,65 @@ function makeSub(c,d){
   if(c.special==="christmas") s.budget=r2(num(d.nsBudget)||0);
   c.subs.push(s); d.nsName=""; d.nsBirth=""; d.nsBudget=""; return {sub:s};
 }
+function moveEstKeys(from,to){ const VE=cfg.varEst||{}; for(const ym in VE){ for(const k of Object.keys(VE[ym])){ if(!k.startsWith("c:")) continue; const [cat,acc]=k.slice(2).split("|"); if(cat!==from) continue; const nk="c:"+to+"|"+acc; VE[ym][nk]=r2((+VE[ym][nk]||0)+(+VE[ym][k]||0)); delete VE[ym][k]; } } }
+/* ---------- fusion de catégories ---------- */
+const PREMERGE_KEY="mc.premerge";
+function catUsage(name,subId){ let n=0; const months=new Set(); for(const ym in TX) TX[ym].forEach(t=>{ if(t.cat===name&&(!subId||t.sub===subId)){ n++; months.add(ym); } }); const pl=cfg.plans.filter(p=>p.cat===name&&(!subId||p.sub===subId)).length; return {n,months:months.size,pl}; }
+function mergeTargets(c){ return cfg.categories.filter(x=>x!==c&&!x.special&&catType(x)===catType(c)&&isSpecialCat(x)===isSpecialCat(c)); }
+function ensureSubIn(list,name,withSubs){ let x=list.find(y=>norm(y.name)===norm(name)); if(!x){ x={id:uid8(),name}; list.push(x); } if(withSubs&&!Array.isArray(x.subs)) x.subs=[]; return x; }
+function takeSnapshot(label){
+  const snap={cfg:JSON.parse(JSON.stringify(cfg)),TX:JSON.parse(JSON.stringify(TX))};
+  if(S.key) encryptData(S.key,snap).then(enc=>{ try{ localStorage.setItem(PREMERGE_KEY,JSON.stringify({uid:S.uid,date:TODAY,label,iv:enc.iv,data:enc.data})); }catch(e){} }).catch(()=>{});
+  return snap;
+}
+function restoreSnapshot(snap){ cfg=normCfg(snap.cfg); TX=snap.TX||{}; const docs=new Set(["config"]); for(const ym in TX) docs.add("tx-"+ym); changed([...docs]); }
+function remapRefs(test,map){ const docs=new Set(["config"]); cfg.plans.forEach(p=>{ if(test(p)) map(p); }); for(const ym in TX) TX[ym].forEach(t=>{ if(test(t)){ map(t); docs.add("tx-"+ym); } }); return docs; }
+function mergeCategory(A,B,mode){
+  const snap=takeSnapshot(`${A.name} → ${B.name}`), subMap={}, sub2Map={};
+  let def={sub:"",sub2:""};
+  if(mode==="sub"){ const S0=ensureSubIn(B.subs,A.name,true); def={sub:S0.id,sub2:""};
+    A.subs.forEach(a=>{ const y=ensureSubIn(S0.subs,a.name,false); subMap[a.id]={sub:S0.id,sub2:y.id}; (a.subs||[]).forEach(a2=>{ sub2Map[a2.id]={sub:S0.id,sub2:y.id}; }); }); }
+  else A.subs.forEach(a=>{ const x=ensureSubIn(B.subs,a.name,true); subMap[a.id]={sub:x.id,sub2:""}; (a.subs||[]).forEach(a2=>{ const y=ensureSubIn(x.subs,a2.name,false); sub2Map[a2.id]={sub:x.id,sub2:y.id}; }); });
+  const docs=remapRefs(o=>o.cat===A.name,o=>{ const m=(o.sub2&&sub2Map[o.sub2])||(o.sub&&subMap[o.sub])||def; o.cat=B.name; o.sub=m.sub; o.sub2=m.sub2; });
+  moveEstKeys(A.name,B.name);
+  cfg.categories=cfg.categories.filter(x=>x!==A);
+  changed([...docs]); return snap;
+}
+function mergeSubcat(C,X,Y){
+  const snap=takeSnapshot(`${C.name} › ${X.name} → ${Y.name}`), m2={};
+  if(!Array.isArray(Y.subs)) Y.subs=[];
+  (X.subs||[]).forEach(a=>{ m2[a.id]=ensureSubIn(Y.subs,a.name,false).id; });
+  const docs=remapRefs(o=>o.cat===C.name&&o.sub===X.id,o=>{ o.sub=Y.id; o.sub2=o.sub2&&m2[o.sub2]?m2[o.sub2]:""; });
+  C.subs=C.subs.filter(z=>z!==X); changed([...docs]); return snap;
+}
+function sheetMerge(s){
+  const A=cfg.categories.find(x=>x.id===s.id); if(!A) return sheetHead("Catégorie introuvable");
+  const d=s.d, T=mergeTargets(A), B=T.find(x=>x.id===d.target), u=catUsage(A.name);
+  let h=sheetHead(`Fusionner ${esc(A.name)}`,"avec une autre catégorie, sans perdre l'historique");
+  if(!T.length) return h+`<p class="note">Aucune autre catégorie du même type à qui fusionner.</p>`;
+  h+=`<div class="q">Dans quelle catégorie ?</div><div class="chips" style="margin-bottom:12px">${T.map(x=>`<button type="button" class="chipbtn ${d.target===x.id?"on":""}" data-act="set" data-f="target" data-v="${x.id}">${esc(x.name)}</button>`).join("")}</div>`;
+  h+=`<div class="q">Que devient ${esc(A.name)} ?</div><div class="tiles" style="margin-bottom:12px">
+    <button class="tile ${d.mode!=="gone"?"on":""}" data-act="set" data-f="mode" data-v="sub"><div><b>Une sous-catégorie</b><span>${B?`${esc(B.name)} › ${esc(A.name)}`:"garde le détail"}${A.subs.length?" · ses sous-catégories deviennent des sous-sous-catégories":""}</span></div></button>
+    <button class="tile ${d.mode==="gone"?"on":""}" data-act="set" data-f="mode" data-v="gone"><div><b>Disparaît complètement</b><span>tout passe dans ${B?esc(B.name):"la cible"}${A.subs.length?", ses sous-catégories y sont reprises":""}</span></div></button></div>`;
+  if(B) h+=`<div class="card pad"><p style="margin:0">${u.n} opération${u.n>1?"s":""}${u.months?` sur ${u.months} mois`:""} et ${u.pl} événement${u.pl>1?"s":""} prévu${u.pl>1?"s":""} seront déplacés vers <b>${esc(B.name)}${d.mode!=="gone"?" › "+esc(A.name):""}</b>.</p><p class="note" style="margin:8px 0 0">Les totaux du mois et de l'année ne changent pas, seule la répartition par catégorie change. Une copie est gardée avant la fusion.</p></div>`;
+  h+=`<div class="actions"><button class="btn primary block" data-act="doMerge" ${B?"":"disabled"}>Fusionner</button></div>`;
+  return h;
+}
+function sheetMergeSub(s){
+  const C=cfg.categories.find(x=>x.id===s.id); if(!C) return sheetHead("Catégorie introuvable");
+  const d=s.d, X=C.subs.find(x=>x.id===d.from), Y=C.subs.find(x=>x.id===d.to);
+  let h=sheetHead("Fusionner des sous-catégories",esc(C.name));
+  const chips=(f,excl)=>`<div class="chips" style="margin-bottom:12px">${C.subs.filter(x=>x.id!==excl).map(x=>`<button type="button" class="chipbtn ${d[f]===x.id?"on":""}" data-act="set" data-f="${f}" data-v="${x.id}">${esc(x.name)}</button>`).join("")}</div>`;
+  h+=`<div class="q">Laquelle disparaît ?</div>${chips("from",null)}`;
+  if(X) h+=`<div class="q">Dans laquelle la fusionner ?</div>${chips("to",X.id)}`;
+  if(X&&Y){ const u=catUsage(C.name,X.id); h+=`<div class="card pad"><p style="margin:0">${u.n} opération${u.n>1?"s":""} et ${u.pl} événement${u.pl>1?"s":""} prévu${u.pl>1?"s":""} passent de <b>${esc(X.name)}</b> à <b>${esc(Y.name)}</b>${(X.subs||[]).length?", avec leurs sous-sous-catégories":""}.</p><p class="note" style="margin:8px 0 0">Le total de ${esc(C.name)} ne change pas.</p></div>`; }
+  h+=`<div class="actions"><button class="btn primary block" data-act="doMergeSub" ${X&&Y&&X!==Y?"":"disabled"}>Fusionner</button></div>`;
+  return h;
+}
 function renameCategory(c,newName){
   const old=c.name; if(!newName||newName===old) return false;
   if(cfg.categories.some(x=>x!==c&&norm(x.name)===norm(newName))){ toast("Cette catégorie existe déjà"); return false; }
-  c.name=newName; cfg.plans.forEach(p=>{ if(p.cat===old) p.cat=newName; });
+  c.name=newName; cfg.plans.forEach(p=>{ if(p.cat===old) p.cat=newName; }); moveEstKeys(old,newName);
   const docs=["config"]; for(const ym in TX){ let ch=false; TX[ym].forEach(t=>{ if(t.cat===old){ t.cat=newName; ch=true; } }); if(ch) docs.push("tx-"+ym); }
   changed(docs); return true;
 }
@@ -2093,6 +2149,13 @@ document.addEventListener("click",async e=>{
     case "catYear": openSheet({type:"yearSeries",y:ui.year,cat:a.dataset.cat}); break;
     case "personYear": openSheet({type:"yearSeries",y:ui.year,id:a.dataset.id}); break;
     case "occAcc": s.acc=a.dataset.v; renderSheet(); break;
+    case "openMerge": pushSheet({type:"merge",id:s.id,d:{target:"",mode:"sub"}}); break;
+    case "openMergeSub": pushSheet({type:"mergeSub",id:s.id,d:{from:"",to:""}}); break;
+    case "doMerge": { const A=cfg.categories.find(x=>x.id===s.id), B=A&&mergeTargets(A).find(x=>x.id===s.d.target); if(!A||!B) break; const mode=s.d.mode==="gone"?"gone":"sub", an=A.name, bn=B.name;
+      askConfirm("Fusionner ?",`${an} ${mode==="sub"?"devient une sous-catégorie de "+bn:"disparaît dans "+bn}. Tu pourras annuler juste après.`,"Fusionner",()=>{ const snap=mergeCategory(A,B,mode); stack.splice(-3,3); const w={type:"catEdit",id:B.id,d:{name:B.name,acc:B.acc||"cc",nsName:"",nsBirth:"",nsBudget:""}}; stack.length?(stack.push(w),renderSheet()):openSheet(w); toast(`${an} fusionnée dans ${bn}`,()=>{ restoreSnapshot(snap); try{ localStorage.removeItem(PREMERGE_KEY); }catch(e){} if(stack.length) renderSheet(); }); }); break; }
+    case "doMergeSub": { const C=cfg.categories.find(x=>x.id===s.id), X=C&&C.subs.find(x=>x.id===s.d.from), Y=C&&C.subs.find(x=>x.id===s.d.to); if(!X||!Y||X===Y) break; const xn=X.name, yn=Y.name;
+      const snap=mergeSubcat(C,X,Y); popSheet(); toast(`${xn} fusionnée dans ${yn}`,()=>{ restoreSnapshot(snap); try{ localStorage.removeItem(PREMERGE_KEY); }catch(e){} if(stack.length) renderSheet(); }); break; }
+    case "undoPremerge": askConfirm("Revenir avant la dernière fusion ?","Toutes tes données reviennent à l'état d'avant cette fusion, y compris les opérations saisies depuis.","Revenir en arrière",async()=>{ popSheet(); try{ const r=JSON.parse(localStorage.getItem(PREMERGE_KEY)||"null"); if(!r||r.uid!==S.uid) return; const snap=await decryptData(S.key,r.iv,r.data); restoreSnapshot(snap); localStorage.removeItem(PREMERGE_KEY); if(stack.length) renderSheet(); toast("Données restaurées"); }catch(e){ toast("Copie illisible"); } }); break;
     case "openAlerts": pushOrOpen({type:"alerts",ym:ui.ym}); break;
     case "alertIgnore": { cfg.alertIgnore=cfg.alertIgnore||{}; const k=a.dataset.k; cfg.alertIgnore[k]=true; changed(["config"]); toast("Alerte ignorée",()=>{ delete cfg.alertIgnore[k]; changed(["config"]); }); break; }
     case "alertDel": { const f=findTx(a.dataset.id); if(!f) break; const t=JSON.parse(JSON.stringify(f.t)); const docs=new Set(); removeTx(t.id,docs); changed([...docs]); toast("Doublon supprimé",()=>{ const d2=new Set(); upsertTx(t,d2); changed([...d2]); }); break; }
