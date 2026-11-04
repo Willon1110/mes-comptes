@@ -340,6 +340,8 @@ header.top{border-bottom-color:var(--bg-line)}
 .ytile b{font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ytile b.pos{color:var(--pos)}.ytile b.neg{color:var(--neg)}
 .ytile small{font-size:11px;color:var(--muted)}
+[data-dg]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.acc.dragging{background:var(--surface)!important}
 .yitem{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative;transition:transform .15s}
 .yitem.dragging,.yitem.picked{z-index:6}
 .yitem.picked{outline:2px dashed var(--ochre);outline-offset:4px;border-radius:16px}
@@ -356,6 +358,10 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .trend.up{background:var(--neg-soft);color:var(--neg)}.trend.down{background:var(--pos-soft);color:var(--pos)}
 .subed .top .grip{margin-right:-2px}
 .chips .cat.dragging{background:var(--accent-soft)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px}
+.pgb{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);min-height:112px}
+.pgb .ic{width:38px;height:38px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;margin-bottom:4px}.pgb .ic svg{width:20px;height:20px}
+.pgb b{font-size:14.5px;color:var(--ink);line-height:1.2}.pgb small{font-size:12px;color:var(--muted)}.pgb.empty{opacity:.6}.pgb small.neg{color:var(--neg)}
 .plq{display:flex;gap:8px;align-items:center;margin:0 0 10px}.plq input{flex:1}
 .hidden-q{display:none!important}
 .alertbtn{position:relative;width:42px;height:42px;border-radius:13px;border:1.5px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 18%,transparent);color:var(--ochre);display:grid;place-items:center;padding:0;flex:none}
@@ -499,7 +505,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.6 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.7 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
@@ -524,7 +530,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.6";
+const VERSION = "3.7";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -1089,12 +1095,12 @@ function viewAccounts(){
   h+=`<div class="segbar"><button data-act="accView" data-v="now" class="${!end?"on":""}">Aujourd'hui</button><button data-act="accView" data-v="end" class="${end?"on":""}">Fin de mois</button></div>`;
   const val=a=>end?endBalance(a.id,ym):balanceAt(a.id,TODAY);
   const tot=cfg.accounts.reduce((x,a)=>x+conv(val(a)||0,a.cur,rate),0);
-  h+=`<div class="accounts" style="margin-top:10px">${cfg.accounts.map(a=>{ const v=val(a);
-    return `<button class="card acc" style="--c:${a.color}" data-act="openAcc" data-id="${a.id}"><div class="n"><span>${esc(a.name)}</span><span class="cur">${a.cur}</span></div>
+  h+=`<div class="accounts" style="margin-top:10px" data-dgbox="acc">${cfg.accounts.map(a=>{ const v=val(a);
+    return `<button class="card acc" style="--c:${a.color}" data-act="openAcc" data-id="${a.id}" data-dg="a:${a.id}"><div class="n"><span>${esc(a.name)}</span><span class="cur">${a.cur}</span></div>
       <div class="lbl">${end?(ym<CUR_YM?"Solde fin de mois":"Prévu fin de mois"):"Aujourd'hui"}</div><div class="v ${v<0?"neg":""}">${isNaN(v)?"—":fmt(v,a.cur)}</div>
       ${end&&v<0?`<div class="s neg">passe dans le rouge</div>`:`<div class="s">${end?`${monthName(ym)} ${y}`:shortDate(TODAY)}</div>`}</button>`; }).join("")}
     <div class="card acc grand"><div class="n"><span>Σ Total</span></div><div class="lbl">${end?"fin de mois":"aujourd'hui"} · CHF à ${rate.toFixed(4).replace(".",",")}</div><div class="v">${fmt(tot,"EUR")}</div><div class="s">${c.hasRate?"taux du transfert du mois":"taux prévu"}</div></div></div>
-    <p class="note">Touche un compte pour voir ses mouvements du mois et les écarts entre prévu et réel.</p>`;
+    <p class="note">Touche un compte pour voir ses mouvements du mois et les écarts entre prévu et réel. Appui long pour le déplacer.</p>`;
   return h;
 }
 function animateFlow(){
@@ -1988,15 +1994,17 @@ function sheetAccount(s){
   const start=endBalance(a.id,addMonths(ym,-1)), end=endBalance(a.id,ym);
   const now=ym===CUR_YM?balanceAt(a.id,TODAY):null;
   const P=c.P.net[a.id]||0, A=c.A.net[a.id]||0;
-  let h=sheetHead(`<span class="cdot" style="--c:${a.color};margin-right:8px;width:14px;height:14px"></span>${esc(a.name)}`,`${monthName(ym)} ${ym.slice(0,4)} · ${cur}`);
+  const pr=c.pointRows.filter(r=>{ const p=r.o.p; return p.acc===a.id||p.from===a.id||p.to===a.id; });
+  const vr=c.varRows.filter(v=>v.acc===a.id), mv=c.tx.filter(t=>txFlows(t).some(([id])=>id===a.id));
+  const dot=`<span class="cdot" style="--c:${a.color};margin-right:8px;width:14px;height:14px"></span>`;
+  if(s.view==="plan"){ let h=sheetHead(`${dot}Prévu ce mois`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)}`); h+=`<div class="sumgrid"><div><span>Mouvements prévus</span><b class="${cls(P)}">${sfmt(P,cur)}</b></div><div><span>Réalisé${ym===CUR_YM?" à date":""}</span><b class="${cls(A)}">${sfmt(A,cur)}</b></div></div>`; h+=pr.length||vr.length?`<div class="card list">${pr.map(r=>pointRow(r,a.id)).join("")}${vr.map(varRow).join("")}</div>`:`<p class="note">Rien de prévu sur ce compte ce mois-ci.</p>`; return h; }
+  if(s.view==="real"){ let h=sheetHead(`${dot}Mouvements réels`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)} · ${mv.length} opération${mv.length>1?"s":""}`); h+=mv.length?`<div class="card list">${mv.map(t=>txRow(t,a.id)).join("")}</div>`:`<p class="note">Aucun mouvement saisi sur ce compte ce mois-ci.</p>`; return h; }
+  let h=sheetHead(`${dot}${esc(a.name)}`,`${monthName(ym)} ${ym.slice(0,4)} · ${cur}`);
   h+=`<div class="sumgrid"><div><span>Début de mois</span><b>${isNaN(start)?"—":fmt(start,cur,0)}</b></div><div><span>${ym<CUR_YM?"Fin de mois":"Fin de mois prévue"}</span><b>${isNaN(end)?"—":fmt(end,cur,0)}</b></div>
     <div><span>Mouvements prévus</span><b class="${cls(P)}">${sfmt(P,cur,0)}</b></div><div><span>Mouvements réels${ym===CUR_YM?" à date":""}</span><b class="${cls(A)}">${sfmt(A,cur,0)}</b></div>
     ${now!=null?`<div><span>Solde actuel</span><b>${fmt(now,cur,0)}</b></div>`:""}<div><span>Écart réel − prévu</span><b class="${cls(A-P)}">${sfmt(A-P,cur,0)}</b></div></div>`;
-  const pr=c.pointRows.filter(r=>{ const p=r.o.p; return p.acc===a.id||p.from===a.id||p.to===a.id; });
-  const vr=c.varRows.filter(v=>v.acc===a.id);
-  if(pr.length||vr.length) h+=`<h4>Prévu ce mois</h4><div class="card list">${pr.map(r=>pointRow(r,a.id)).join("")}${vr.map(varRow).join("")}</div>`;
-  const mv=c.tx.filter(t=>txFlows(t).some(([id])=>id===a.id));
-  h+=`<h4>Mouvements réels (${mv.length})</h4>${mv.length?`<div class="card list">${mv.map(t=>txRow(t,a.id)).join("")}</div>`:`<p class="note">Aucun mouvement saisi sur ce compte ce mois-ci.</p>`}`;
+  const late=pr.filter(r=>r.late).length, todo=pr.filter(r=>!r.done).length;
+  h+=`<div class="pgrid" style="margin-top:14px"><button class="pgb" data-act="accSub" data-v="plan" data-id="${a.id}"><span class="ic" style="color:var(--title)">${I.fixed}</span><b>Prévu ce mois</b><small>${pr.length+vr.length} ligne${pr.length+vr.length>1?"s":""}${todo?` · ${todo} à confirmer`:""}</small>${late?`<small class="neg" style="font-weight:700">${late} en retard</small>`:""}</button><button class="pgb" data-act="accSub" data-v="real" data-id="${a.id}"><span class="ic" style="color:var(--accent)">${I.list}</span><b>Mouvements réels</b><small>${mv.length} opération${mv.length>1?"s":""}</small></button></div>`;
   h+=`<div class="actions"><button class="btn block" data-act="editAccount" data-id="${a.id}">Modifier le compte</button></div>`;
   return h;
 }
@@ -2004,7 +2012,7 @@ function sheetAccount(s){
 /* ----- comptes ----- */
 function sheetAccounts(){
   let h=sheetHead("Comptes","Noms, soldes de départ, couleurs");
-  h+=`<div class="card list">${cfg.accounts.map(a=>`<button class="row" data-act="editAccount" data-id="${a.id}"><span class="cdot" style="--c:${a.color};width:16px;height:16px"></span><div class="main"><div class="l">${esc(a.name)} <span class="cur" style="margin-left:4px">${a.cur}</span></div><div class="m">Solde ${fmt(+a.bal||0,a.cur)} au début du ${shortDate(a.balDate)}</div></div><div class="amt"><b>${fmt(balanceAt(a.id,TODAY),a.cur,0)}</b><small>aujourd'hui</small></div></button>`).join("")}</div>`;
+  h+=`<p class="note" style="margin:0 0 8px">Appui long sur un compte pour changer l'ordre.</p><div class="card list" data-dgbox="acc">${cfg.accounts.map(a=>`<button class="row" data-act="editAccount" data-id="${a.id}" data-dg="a:${a.id}"><span class="cdot" style="--c:${a.color};width:16px;height:16px"></span><div class="main"><div class="l">${esc(a.name)} <span class="cur" style="margin-left:4px">${a.cur}</span></div><div class="m">Solde ${fmt(+a.bal||0,a.cur)} au début du ${shortDate(a.balDate)}</div></div><div class="amt"><b>${fmt(balanceAt(a.id,TODAY),a.cur,0)}</b><small>aujourd'hui</small></div></button>`).join("")}</div>`;
   h+=`<div class="actions"><button class="btn primary block" data-act="newAccount">Ajouter un compte</button></div><p class="note">Le solde de départ est celui affiché par ta banque à une date donnée. Les opérations saisies à partir de cette date s'y ajoutent.</p>`;
   return h;
 }
@@ -2069,17 +2077,30 @@ function filterPlans(q){
   box.querySelectorAll(".plgrp").forEach(g=>{ const any=g.querySelector("[data-q]:not(.hidden-q)"); g.classList.toggle("hidden-q",!any); });
   const n=box.querySelectorAll("[data-q]:not(.hidden-q)").length, e=document.getElementById("plnone"); if(e) e.hidden=!(words.length&&!n);
 }
+const PLAN_GROUPS=[
+  {k:"inc",t:"Revenus",c:"var(--pos)",ic:()=>I.in,f:p=>p.kind==="income"},
+  {k:"fix",t:"Dépenses fixes",c:"var(--title)",ic:()=>I.fixed,f:p=>p.kind==="expense"&&p.nature==="fixe"},
+  {k:"var",t:"Dépenses variables",c:"var(--ochre)",ic:()=>I.basket,f:p=>p.kind==="expense"&&p.nature==="variable"},
+  {k:"spe",t:"Dépenses spéciales",c:"var(--accent)",ic:()=>I.spark,f:p=>p.kind==="expense"&&p.nature==="special"},
+  {k:"tr",t:"Virements",c:"var(--title)",ic:()=>I.swap,f:p=>p.kind==="transfer"},
+  {k:"gift",t:"Anniversaires et Noël",c:"var(--neg)",ic:()=>I.tag,f:null}];
 function sheetPlans(s){
-  s=s||{}; let h=sheetHead("Événements prévus","Touche un événement pour le modifier ou le supprimer",`<button class="iconbtn" data-act="planSearch" aria-label="Rechercher">${I_SEARCH}</button>`);
+  s=s||{}; const G0=s.group?PLAN_GROUPS.find(x=>x.k===s.group):null; let h=sheetHead(G0?G0.t:"Événements prévus",G0||s.search?"Touche un événement pour le modifier ou le supprimer":"Choisis un type d'événement",`<button class="iconbtn" data-act="planSearch" aria-label="Rechercher">${I_SEARCH}</button>`);
   if(s.search) h+=`<div class="plq"><input id="planq" type="search" placeholder="Libellé, catégorie, compte, montant…" value="${esc(s.q||"")}" autocomplete="off" aria-label="Rechercher un événement"><button class="iconbtn" data-act="planSearchClear" aria-label="Effacer la recherche">${I.close}</button></div><p class="note" id="plnone" hidden>Aucun événement ne correspond.</p>`;
-  const groups=[["Revenus",p=>p.kind==="income"],["Dépenses fixes",p=>p.kind==="expense"&&p.nature==="fixe"],["Dépenses variables (budgets)",p=>p.kind==="expense"&&p.nature==="variable"],["Dépenses spéciales",p=>p.kind==="expense"&&p.nature==="special"],["Virements",p=>p.kind==="transfer"]];
-  groups.forEach(([t,f])=>{ const list=cfg.plans.filter(f); if(!list.length) return;
+  const groups=PLAN_GROUPS.filter(g=>g.f);
+  const vs0=[]; cfg.categories.filter(c=>c.special==="birthday"||c.special==="christmas").forEach(c=>c.subs.forEach(x=>vs0.push(x)));
+  if(!s.search&&!s.group){
+    h+=`<div class="pgrid">${PLAN_GROUPS.map(g=>{ const n=g.f?cfg.plans.filter(g.f).length:vs0.length; const tot=g.f?cfg.plans.filter(g.f).reduce((x,p)=>x+conv(+p.amount||0,curOf(p.kind==="transfer"?p.from:p.acc),+cfg.planRate||1)*(freqOf(p.freq)[2]||0),0):0;
+      return `<button class="pgb ${n?"":"empty"}" data-act="planGroup" data-g="${g.k}"><span class="ic" style="color:${g.c}">${g.ic()}</span><b>${g.t}</b><small>${n} ${g.k==="gift"?(n>1?"personnes":"personne"):(n>1?"événements":"événement")}${tot>0.004?` · ≈ ${fmt(tot,"EUR",0)}/mois`:""}</small></button>`; }).join("")}</div>`;
+    h+=`<div class="actions"><button class="btn primary block" data-act="newPlan">Créer un événement</button></div>`; return h; }
+  groups.filter(g=>!s.group||g.k===s.group).forEach(({t,f})=>{ const list=cfg.plans.filter(f); if(!list.length) return;
     h+=`<div class="plgrp"><h4>${t}</h4><div class="card list">${list.map(p=>{ const a=p.kind==="transfer"?p.from:p.acc, fq=freqOf(p.freq);
       return `<button class="row" data-act="editPlan" data-id="${p.id}" data-q="${esc(planHay(p))}"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)}</div><div class="m">${esc(fq[1]+(FREQ_STEP[p.freq]?(p.noDate?" · sans date":" · le "+(+p.date.slice(8))):"")+" · "+(p.kind==="transfer"?accName(p.from)+" → "+accName(p.to):accName(p.acc)))}</div></div><div class="amt"><b>${fmt(p.amount,curOf(a))}</b></div></button>`; }).join("")}</div></div>`; });
   const vs=[]; cfg.categories.filter(c=>c.special==="birthday"||c.special==="christmas").forEach(c=>c.subs.forEach(x=>vs.push({c,x})));
-  if(vs.length) h+=`<div class="plgrp"><h4>Anniversaires et Noël</h4><div class="card list">${vs.map(({c,x})=>{ const bd=c.special==="birthday", nb=bd?nextBirthday(x.birth):null;
+  if(vs.length&&(!s.group||s.group==="gift")) h+=`<div class="plgrp"><h4>Anniversaires et Noël</h4><div class="card list">${vs.map(({c,x})=>{ const bd=c.special==="birthday", nb=bd?nextBirthday(x.birth):null;
     return `<button class="row" data-act="editSub" data-cat="${c.id}" data-id="${x.id}" data-q="${esc(norm([bd?"anniversaire":"noel",x.name,c.name,accName(c.acc||"cc"),x.birth?shortDate(x.birth):"",String(+x.budget||0),fmt(+x.budget||0,"EUR"),x.gift||""].join(" ")))}"><span class="cdot" style="--c:${accColor(c.acc||"cc")}"></span><div class="main"><div class="l">${bd?"Anniversaire ":"Noël "}${esc(x.name)}</div><div class="m">${bd?(nb?`le ${shortDate(x.birth)} · ${ageOn(x.birth,nb)} ans en ${nb.slice(0,4)}`:"date de naissance à compléter"):"chaque année en décembre"}${x.gift?" · cadeau : "+esc(x.gift):""} · ${esc(c.name)}</div></div><div class="amt"><b>${fmt(+x.budget||0,"EUR")}</b><small>${+x.budget>0?"budget":"sans budget"}</small></div></button>`; }).join("")}</div></div>`;
-  if(!cfg.plans.length&&!vs.length) h+=`<p class="note">Aucun événement pour l'instant.</p>`;
+  if(s.group&&!s.search&&!(s.group==="gift"?vs.length:cfg.plans.filter((PLAN_GROUPS.find(g=>g.k===s.group)||{}).f||(()=>false)).length)) h+=`<p class="note">Aucun événement de ce type pour l'instant.</p>`;
+  else if(!cfg.plans.length&&!vs.length) h+=`<p class="note">Aucun événement pour l'instant.</p>`;
   h+=`<div class="actions"><button class="btn primary block" data-act="newPlan">Créer un événement</button></div>`;
   return h;
 }
@@ -2306,6 +2327,7 @@ document.addEventListener("click",async e=>{
     case "openPerson": pushOrOpen({type:"person",ym:s.ym,id:a.dataset.id}); break;
     case "openJournal": openSheet({type:"journal",ym:ui.ym,d:{kind:"all",acc:"",per:""}}); break;
     case "accView": ui.accView=a.dataset.v; render(); break;
+    case "accSub": pushSheet({type:"account",id:a.dataset.id,ym:s?s.ym:ui.ym,view:a.dataset.v}); break;
     case "editSub": { const c=cfg.categories.find(x=>x.id===a.dataset.cat), x=c&&c.subs.find(y=>y.id===a.dataset.id); if(x) pushOrOpen({type:"subEdit",cat:c.id,id:x.id,d:{name:x.name,birth:x.birth||"",budget:numStr(x.budget),gift:x.gift||""}}); break; }
     case "saveSubEdit": { const c=cfg.categories.find(x=>x.id===s.cat), x=c&&c.subs.find(y=>y.id===s.id); if(!x) break; const n=(s.d.name||"").trim(); if(!n){ s.err="Indique un prénom."; renderSheet(); break; }
       if(c.special==="birthday"&&!isISO(s.d.birth)){ s.err="Indique la date de naissance."; renderSheet(); break; } const b=String(s.d.budget||"").trim()===""?0:num(s.d.budget); if(isNaN(b)||b<0){ s.err="Budget invalide."; renderSheet(); break; }
@@ -2321,6 +2343,7 @@ document.addEventListener("click",async e=>{
     case "doMergeSub": { const C=cfg.categories.find(x=>x.id===s.id), X=C&&C.subs.find(x=>x.id===s.d.from), Y=C&&C.subs.find(x=>x.id===s.d.to); if(!X||!Y||X===Y) break; const xn=X.name, yn=Y.name;
       const snap=mergeSubcat(C,X,Y); popSheet(); toast(`${xn} fusionnée dans ${yn}`,()=>{ restoreSnapshot(snap); try{ localStorage.removeItem(PREMERGE_KEY); }catch(e){} if(stack.length) renderSheet(); }); break; }
     case "undoPremerge": askConfirm("Revenir avant la dernière fusion ?","Toutes tes données reviennent à l'état d'avant cette fusion, y compris les opérations saisies depuis.","Revenir en arrière",async()=>{ popSheet(); try{ const r=JSON.parse(localStorage.getItem(PREMERGE_KEY)||"null"); if(!r||r.uid!==S.uid) return; const snap=await decryptData(S.key,r.iv,r.data); restoreSnapshot(snap); localStorage.removeItem(PREMERGE_KEY); if(stack.length) renderSheet(); toast("Données restaurées"); }catch(e){ toast("Copie illisible"); } }); break;
+    case "planGroup": pushSheet({type:"plans",group:a.dataset.g}); break;
     case "planSearch": { s.search=!s.search; if(!s.search) s.q=""; renderSheet(); if(s.search) setTimeout(()=>{ const i=document.getElementById("planq"); if(i) i.focus(); },50); break; }
     case "planSearchClear": { s.q=""; const i=document.getElementById("planq"); if(i){ i.value=""; i.focus(); } filterPlans(""); break; }
     case "openYearCfg": openSheet({type:"yearCfg"}); break;
@@ -2714,12 +2737,13 @@ document.addEventListener("pointermove",e=>{
   if(e.clientY<H.top+80) (sc||window).scrollBy(0,-14); else if(e.clientY>H.bottom-110) (sc||window).scrollBy(0,14);
   GD.it.style.pointerEvents="none"; const el=document.elementFromPoint(e.clientX,e.clientY); GD.it.style.pointerEvents="";
   let over=el&&el.closest("[data-dg]"); while(over&&over.parentElement!==GD.box) over=over.parentElement?over.parentElement.closest("[data-dg]"):null;
-  if(over&&over!==GD.it&&over.parentElement===GD.box){ const r=over.getBoundingClientRect(); const twoD=GD.box.classList.contains("ytiles")||GD.box.classList.contains("chips");
+  if(over&&over!==GD.it&&over.parentElement===GD.box){ const r=over.getBoundingClientRect(); const twoD=GD.box.classList.contains("ytiles")||GD.box.classList.contains("chips")||GD.box.classList.contains("accounts");
     const after=twoD?(e.clientY>r.bottom-4||(e.clientY>=r.top&&e.clientX>r.left+r.width/2)):e.clientY>r.top+r.height/2; GD.box.insertBefore(GD.it,after?over.nextSibling:over); }
 },{passive:false});
 document.addEventListener("touchmove",e=>{ if(GD&&GD.active) e.preventDefault(); },{passive:false});
 function gdApply(box,ids){
   if(box==="yt"||box==="yb"||box==="lt"||box==="lb") return yApplyOrder(box,ids);
+  if(box==="acc"){ const m=Object.fromEntries(cfg.accounts.map(a=>[a.id,a])), na=ids.map(x=>m[x.split(":")[1]]).filter(Boolean); if(na.length!==cfg.accounts.length) return false; cfg.accounts=na; changed(["config"]); if(stack.length) renderSheet(); return true; }
   const [k,cid,sid]=box.split(":"), c=cfg.categories.find(x=>x.id===cid); if(!c) return false;
   const list=k==="sub"?c.subs:(c.subs.find(x=>x.id===sid)||{}).subs; if(!Array.isArray(list)) return false;
   const m=Object.fromEntries(list.map(x=>[x.id,x])), na=ids.map(s=>m[s.split(":")[1]]).filter(Boolean); if(na.length!==list.length) return false;
