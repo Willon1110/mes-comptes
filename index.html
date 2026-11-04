@@ -499,7 +499,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.4 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.5 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
@@ -524,7 +524,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.4";
+const VERSION = "3.5";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -2587,19 +2587,24 @@ function calcKey(k){
 /* date de naissance au pavé : JJ/MM/AAAA */
 function openBday(el){
   const v=isISO(el.value)?el.value:"";
-  CALC={el,mode:"bd",dg:v?v.slice(8,10)+v.slice(5,7)+v.slice(0,4):"",fresh:!!v,err:""};
+  CALC={el,mode:"bd",bm:"date",dg:v?v.slice(8,10)+v.slice(5,7)+v.slice(0,4):"",fresh:!!v,err:""};
   renderBday(); document.getElementById("calc").classList.add("on");
 }
+function bdAgeISO(dg){ if(dg.length<5) return null; const d=+dg.slice(0,2), m=+dg.slice(2,4), age=+dg.slice(4); if(m<1||m>12||d<1||d>daysIn(2000,m)||!(age>=0&&age<=120)) return null;
+  const ty=+TODAY.slice(0,4), md=`${pad(m)}-${pad(d)}`, occY=(`${ty}-${md}`>=TODAY)?ty:ty+1, by=occY-age; const dd=Math.min(d,daysIn(by,m)); if(by<1900) return null; return `${by}-${pad(m)}-${pad(dd)}`; }
 function bdISO(dg){ if(dg.length!==8) return null; const d=+dg.slice(0,2), m=+dg.slice(2,4), y=+dg.slice(4); if(m<1||m>12||d<1||d>daysIn(y,m)||y<1900) return null; return `${y}-${pad(m)}-${pad(d)}`; }
 function renderBday(){
-  const dg=CALC.dg, mask="JJMMAAAA"; let out="";
-  for(let i=0;i<8;i++){ if(i===2||i===4) out+=`<span class="sep">/</span>`; out+=i<dg.length?`<span>${dg[i]}</span>`:`<span class="ph">${mask[i]}</span>`; }
-  const iso=bdISO(dg); let info="&nbsp;";
+  const dg=CALC.dg, age=CALC.bm==="age"; let out="";
+  if(!age){ const mask="JJMMAAAA"; for(let i=0;i<8;i++){ if(i===2||i===4) out+=`<span class="sep">/</span>`; out+=i<dg.length?`<span>${dg[i]}</span>`:`<span class="ph">${mask[i]}</span>`; } }
+  else { const mask="JJMM"; for(let i=0;i<4;i++){ if(i===2) out+=`<span class="sep">/</span>`; out+=i<dg.length?`<span>${dg[i]}</span>`:`<span class="ph">${mask[i]}</span>`; } const a=dg.slice(4); out+=`<span class="sep" style="margin:0 8px">·</span>${a?`<span>${a}</span>`:`<span class="ph">âge</span>`}<span class="sep" style="font-size:.5em;margin-left:6px">ans</span>`; }
+  const iso=age?bdAgeISO(dg):bdISO(dg); let info="&nbsp;";
   if(CALC.err) info=`<span class="neg">${esc(CALC.err)}</span>`;
-  else if(CALC.fresh) info="tape la nouvelle date ou ⌫ pour corriger";
+  else if(CALC.fresh) info=age?"tape le jour, le mois puis l'âge, ou ⌫ pour corriger":"tape la nouvelle date ou ⌫ pour corriger";
+  else if(age){ if(iso){ const nb=nextBirthday(iso); info=`aura ${ageOn(iso,nb)} ans le ${longDate(nb)} · né(e) en ${iso.slice(0,4)}`; } else if(dg.length<4) info="jour et mois de l'anniversaire, puis l'âge qu'il ou elle va avoir"; else if(dg.length===4) info="puis l'âge qu'il ou elle va avoir"; else info=`<span class="neg">Date impossible</span>`; }
   else if(iso&&iso<=TODAY){ const nb=nextBirthday(iso); info=`${ageOn(iso,TODAY)-(TODAY.slice(5)<iso.slice(5)?1:0)} ans aujourd'hui · ${ageOn(iso,nb)} ans le ${shortDate(nb)}`; }
   else if(dg.length===8) info=`<span class="neg">Date impossible</span>`;
   document.getElementById("calc").innerHTML=`<div class="pad-sheet"><div class="calc-top"><span>${esc(calcLabel(CALC.el))}</span><button class="iconbtn" data-cx="cancel" aria-label="Fermer">${I.close}</button></div>
+  <div class="seg" style="margin:0 0 10px"><button type="button" data-cx="bm:date" class="${!age?"on":""}">Date de naissance</button><button type="button" data-cx="bm:age" class="${age?"on":""}">Âge à venir</button></div>
   <div class="calc-disp"><div class="calc-expr">${info}</div><div class="calc-res bd-res" style="${CALC.fresh?"opacity:.45":""}" aria-live="polite">${out}</div></div>
   <div class="calc-keys">${["1","2","3","4","5","6","7","8","9","cal","0","⌫"].map(k=>`<button type="button" class="${k==="⌫"||k==="cal"?"fn":""}" data-cx="${k}" aria-label="${k==="⌫"?"Effacer":k==="cal"?"Choisir dans le calendrier":k}">${k==="cal"?I.cal:k}</button>`).join("")}<button type="button" class="ok" data-cx="OK" style="grid-column:1/-1">Valider</button></div></div>`;
 }
@@ -2607,11 +2612,13 @@ function bdKey(k){
   const box=document.getElementById("calc"); CALC.err="";
   if(k==="cancel"){ box.classList.remove("on"); CALC.mode=""; return; }
   if(k==="cal"){ box.classList.remove("on"); CALC.mode=""; const el=CALC.el, iso=bdISO(CALC.dg); openCal(el); if(iso){ CAL.ym=iso.slice(0,7); renderCal(); } else if(CALC.dg.length===8){ CAL.ym=CALC.dg.slice(4)+"-"+(+CALC.dg.slice(2,4)>=1&&+CALC.dg.slice(2,4)<=12?CALC.dg.slice(2,4):"01"); renderCal(); } return; }
-  if(/^[0-9]$/.test(k)){ if(CALC.fresh) CALC.dg=""; CALC.fresh=false; if(CALC.dg.length<8) CALC.dg+=k; return renderBday(); }
+  if(k==="bm:date"||k==="bm:age"){ const nm=k.slice(3); if(nm!==CALC.bm){ const iso=CALC.bm==="age"?bdAgeISO(CALC.dg):bdISO(CALC.dg); CALC.bm=nm; CALC.fresh=false;
+      if(iso){ CALC.dg=nm==="age"?iso.slice(8,10)+iso.slice(5,7)+String(ageOn(iso,nextBirthday(iso))):iso.slice(8,10)+iso.slice(5,7)+iso.slice(0,4); CALC.fresh=true; } else CALC.dg=CALC.dg.slice(0,4); } return renderBday(); }
+  if(/^[0-9]$/.test(k)){ if(CALC.fresh) CALC.dg=""; CALC.fresh=false; if(CALC.dg.length<(CALC.bm==="age"?7:8)) CALC.dg+=k; return renderBday(); }
   if(k==="⌫"){ CALC.fresh=false; CALC.dg=CALC.dg.slice(0,-1); return renderBday(); }
   if(k==="OK"||k==="="){ if(CALC.fresh){ box.classList.remove("on"); CALC.mode=""; return; }
     if(!CALC.dg){ setInputValue(CALC.el,""); box.classList.remove("on"); CALC.mode=""; return; }
-    const iso=bdISO(CALC.dg); if(!iso){ CALC.err=CALC.dg.length<8?"Tape 8 chiffres : jour, mois, année":"Date impossible"; return renderBday(); }
+    const iso=CALC.bm==="age"?bdAgeISO(CALC.dg):bdISO(CALC.dg); if(!iso){ CALC.err=CALC.bm==="age"?(CALC.dg.length<5?"Tape le jour, le mois puis l'âge":"Date impossible"):(CALC.dg.length<8?"Tape 8 chiffres : jour, mois, année":"Date impossible"); return renderBday(); }
     if(iso>TODAY){ CALC.err="La date ne peut pas être dans le futur"; return renderBday(); }
     setInputValue(CALC.el,iso); box.classList.remove("on"); CALC.mode=""; return; }
 }
