@@ -334,6 +334,17 @@ h4{margin:16px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05e
 .pbar .pv small{font-size:11px;color:var(--muted)}
 /* fond indigo, cartes crème */
 header.top{border-bottom-color:var(--bg-line)}
+.alertbtn{position:relative;width:42px;height:42px;border-radius:13px;border:1.5px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 18%,transparent);color:var(--ochre);display:grid;place-items:center;padding:0;flex:none}
+.alertbtn[hidden]{display:none}.alertbtn svg{width:22px;height:22px}
+.alertbtn .ab{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:var(--neg);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg)}
+.alc{padding:12px 14px;margin-bottom:10px}
+.alc .k{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)}
+.alc .k.strong{color:var(--neg)}
+.alc h5{margin:3px 0 6px;font-size:14px;font-weight:600;line-height:1.4;color:var(--ink)}
+.alc .tx{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;border-top:1px solid var(--line);color:var(--ink)}
+.alc .tx small{color:var(--muted);display:block}
+.alc .acts2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.alc .acts2 .btn{padding:8px 12px;font-size:13px;min-height:0}
 header.top .app{color:var(--on-bg)} header.top .ver{color:var(--on-bg-muted)}
 #view .period h1{color:var(--on-bg)} #view .period small{color:var(--on-bg-muted)}
 #view .bh h2{color:var(--on-bg)} #view .bh .t{color:var(--on-bg-muted)}
@@ -464,8 +475,9 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v3.1 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v3.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
+  <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
 </div></header>
 
 <main class="wrap" id="view"></main>
@@ -488,7 +500,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "3.1";
+const VERSION = "3.2";
 const PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const FREQS = [["monthly","Mensuelle",1],["once","Ponctuelle",0],["weekly","Hebdomadaire",52/12],["biweekly","Toutes les 2 semaines",26/12],["bimonthly","Tous les 2 mois",1/2],["quarterly","Trimestrielle",1/3],["semiannual","Semestrielle",1/6],["annual","Annuelle",1/12]];
 const FREQ_STEP = {monthly:1,bimonthly:2,quarterly:3,semiannual:6,annual:12};
@@ -691,6 +703,67 @@ function calcMonth(ym){
   const res={ym,occ,tx,rA,rP,hasRate:sf>0,P,A,F,pointRows,varRows,unplanned,skipped};
   memo.set(ym,res); return res;
 }
+/* ---------- points à vérifier ---------- */
+const dayN = iso => Date.UTC(+iso.slice(0,4),+iso.slice(5,7)-1,+iso.slice(8))/864e5;
+const ecart = (a,b) => { const n=Math.abs(dayN(a.date)-dayN(b.date)); return n===0?"le même jour":n===1?"à 1 jour d'écart":"à "+n+" jours d'écart"; };
+const txAmt = t => t.kind==="transfer"?t.amtFrom:t.amount;
+function monthAlerts(ym){
+  const mk="alerts:"+ym; if(memo.has(mk)) return memo.get(mk);
+  const IG=cfg.alertIgnore||{}, out=[], c=calcMonth(ym), tx=c.tx.filter(t=>!t.bulk);
+  const prev=effTx(addMonths(ym,-1)).filter(t=>!t.bulk&&dayN(ym+"-01")-dayN(t.date)<=5);
+  const add=a=>{ if(!IG[a.key]) out.push(a); };
+  // 1-2 doublons et montants identiques
+  const pool=prev.concat(tx);
+  for(let i=0;i<pool.length;i++) for(let j=i+1;j<pool.length;j++){
+    const a=pool[i], b=pool[j]; if(a.date.slice(0,7)!==ym&&b.date.slice(0,7)!==ym) continue;
+    if(a.kind!==b.kind||Math.abs(r2(txAmt(a))-r2(txAmt(b)))>0.004||Math.abs(dayN(a.date)-dayN(b.date))>5) continue;
+    if(a.link&&b.link&&a.link!==b.link) continue;
+    const same=a.kind==="transfer"?(a.from===b.from&&a.to===b.to):(a.acc===b.acc&&a.cat===b.cat&&(a.sub||"")===(b.sub||""));
+    const strong=same||(a.link&&a.link===b.link);
+    const [o,n]=a.date<=b.date?[a,b]:[b,a];
+    add({key:"dup:"+[a.id,b.id].sort().join("+"),type:strong?"dup":"same",strong,title:strong?"Doublon probable":"Montant identique",
+      text:strong?(a.link&&a.link===b.link?"La même échéance a été confirmée deux fois.":"Même montant, même compte et même catégorie, "+ecart(a,b)+"."):"Même montant, "+ecart(a,b)+", mais pas le même poste. À vérifier.",
+      txs:[o,n],del:strong?n.id:null});
+  }
+  // 3 échéance en double
+  c.pointRows.filter(r=>!r.done&&r.o.p.kind==="expense").forEach(r=>{
+    const pl=r2(r.planned);
+    tx.filter(t=>t.kind==="expense"&&!t.link&&Math.abs(r2(t.amount)-pl)<0.005&&(t.cat===r.o.p.cat||t.acc===r.o.p.acc)).forEach(t=>{
+      add({key:"link:"+t.id+"@"+r.o.key,type:"link",strong:true,title:"Échéance en double ?",text:`Cette dépense ressemble à l'échéance « ${r.o.label} » encore à venir : elle risque d'être comptée deux fois.`,txs:[t],link:{id:t.id,key:r.o.key,label:r.o.label}}); });
+  });
+  // 4 incohérences
+  cfg.accounts.forEach(acc=>{ const v=ym<CUR_YM?balanceAt(acc.id,lastDay(ym)):endBalance(acc.id,ym); if(isFinite(v)&&v<-0.004) add({key:"neg:"+acc.id+"@"+ym,type:"neg",strong:true,title:"Compte à découvert",text:`${acc.name} ${ym<CUR_YM?"a fini":"finirait"} le mois à ${fmt(v,acc.cur)}.`,acc:acc.id}); });
+  tx.filter(t=>t.kind==="transfer"&&curOf(t.from)==="CHF"&&curOf(t.to)==="EUR"&&t.amtFrom>0).forEach(t=>{ const r=t.amtTo/t.amtFrom, pr=+cfg.planRate||0; if(pr>0&&Math.abs(r-pr)/pr>0.05) add({key:"rate:"+t.id,type:"rate",title:"Taux CHF inhabituel",text:`Taux obtenu ${r.toFixed(4).replace(".",",")} pour un taux prévu de ${String(pr).replace(".",",")} : vérifie les montants envoyé et reçu.`,txs:[t]}); });
+  tx.filter(t=>t.kind==="expense"&&t.cat&&t.amount>=20).forEach(t=>{
+    const hist=[]; for(let k=1;k<=6;k++){ const pm=addMonths(ym,-k); effTx(pm).forEach(x=>{ if(x.kind==="expense"&&x.cat===t.cat&&!x.bulk) hist.push(x.amount); }); }
+    if(hist.length<3) return; hist.sort((a,b)=>a-b); const med=hist[Math.floor(hist.length/2)];
+    if(med>0&&t.amount>3*med) add({key:"big:"+t.id,type:"big",title:"Montant inhabituel",text:`${fmt(t.amount,curOf(t.acc))} en ${t.cat}, alors que d'habitude c'est environ ${fmt(med,curOf(t.acc))}.`,txs:[t]});
+  });
+  tx.filter(t=>t.date>TODAY&&!t.link).forEach(t=>add({key:"fut:"+t.id,type:"fut",title:"Date dans le futur",text:"Cette opération est datée après aujourd'hui. Faute de frappe sur la date ?",txs:[t]}));
+  { const y=ym.slice(0,4), m=+ym.slice(5); cfg.categories.filter(isGiftCat).forEach(cat=>cat.subs.forEach(x=>{ const b=+x.budget||0; if(!(b>0)) return;
+    if(!tx.some(t=>t.kind==="expense"&&t.cat===cat.name&&t.sub===x.id)) return; const sp=specSpentRange(cat.name,x.id,y,1,m);
+    if(sp>b+0.004) add({key:"gift:"+x.id+"@"+y,type:"gift",title:"Budget cadeau dépassé",text:`${cat.special==="christmas"?"Noël":"Anniversaire"} ${x.name} : ${fmt(sp,"EUR")} dépensés pour un budget de ${fmt(b,"EUR")} (dépassé de ${fmt(sp-b,"EUR")}).`}); })); }
+  out.sort((a,b)=>(b.strong?1:0)-(a.strong?1:0));
+  memo.set(mk,out); return out;
+}
+function updateAlertBtn(){ const b=document.getElementById("alertbtn"); if(!b) return; const n=(typeof cfg!=="undefined"&&cfg&&cfg.accounts)?monthAlerts(ui.ym).length:0; b.hidden=!n; document.getElementById("alertn").textContent=n; b.setAttribute("aria-label",`${n} point${n>1?"s":""} à vérifier en ${monthName(ui.ym)}`); }
+function sheetAlerts(s){
+  const L=monthAlerts(s.ym);
+  let h=sheetHead("À vérifier",`${monthName(s.ym)} ${s.ym.slice(0,4)} · ${L.length?L.length+" point"+(L.length>1?"s":""):"rien à signaler"}`);
+  if(!L.length) return h+`<div class="card pad"><p class="note" style="margin:0">Tout est en ordre pour ce mois-ci.</p></div>`;
+  const txLine=t=>`<div class="tx"><div><b>${esc(t.label||t.cat||"Opération")}</b><small>${shortDate(t.date)} · ${t.kind==="transfer"?esc(accName(t.from)+" → "+accName(t.to)):esc(accName(t.acc)+(t.cat?" · "+t.cat:""))}</small></div><b>${fmt(txAmt(t),curOf(t.kind==="transfer"?t.from:t.acc))}</b></div>`;
+  L.forEach(a=>{
+    const acts=[];
+    (a.txs||[]).forEach((t,i)=>acts.push(`<button class="btn" data-act="editTx" data-id="${t.id}">Voir${a.txs.length>1?(i?" la 2ᵉ":" la 1ʳᵉ"):""}</button>`));
+    if(a.del) acts.push(`<button class="btn danger" data-act="alertDel" data-id="${a.del}">Supprimer le doublon</button>`);
+    if(a.link) acts.push(`<button class="btn primary" data-act="alertLink" data-id="${a.link.id}" data-key="${esc(a.link.key)}">Rattacher à l'échéance</button>`);
+    if(a.acc) acts.push(`<button class="btn" data-act="openAcc" data-id="${a.acc}">Voir le compte</button>`);
+    if(a.type==="gift") acts.push(`<button class="btn" data-act="openSpecList">Voir les spéciales</button>`);
+    acts.push(`<button class="btn ghost" data-act="alertIgnore" data-k="${esc(a.key)}">Ce n'est pas un problème</button>`);
+    h+=`<div class="card alc"><div class="k ${a.strong?"strong":""}">${esc(a.title)}</div><h5>${esc(a.text)}</h5>${(a.txs||[]).map(txLine).join("")}<div class="acts2">${acts.join("")}</div></div>`;
+  });
+  return h+`<p class="note">« Ce n'est pas un problème » fait disparaître l'alerte pour ce cas précis uniquement.</p>`;
+}
 function balanceAt(acc,until){
   const a=accById(acc); if(!a) return 0; let b=+a.bal||0;
   for(const ym in TX){ if(ym<a.balDate.slice(0,7)||ym>until.slice(0,7)) continue; for(const t of effTx(ym)) if(t.date>=a.balDate&&t.date<=until) b+=flowFor(t,acc); }
@@ -732,7 +805,7 @@ function setSync(s){
   const map={loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
   const [c,l]=map[s]||map.offline; const d=document.getElementById("syncdot"), t=document.getElementById("synctxt"); if(d) d.className="dot "+c; if(t) t.textContent=l;
 }
-function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
+function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
 function scheduleSave(){ S.dirty=true; clearTimeout(saveT); saveT=setTimeout(doSave,700); }
 const isNetErr=e=>!navigator.onLine||/fetch|network|Failed to fetch|Load failed|NetworkError/i.test(String(e&&(e.message||e)));
 async function doSave(){
@@ -983,6 +1056,7 @@ function render(){
   if(stack.length&&topS().type==="security") setTimeout(renderSheet,0);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===ui.tab));
   document.getElementById("view").innerHTML = ui.tab==="annee"?viewYear():ui.tab==="comptes"?viewAccounts():ui.tab==="reglages"?viewSettings():viewMonth();
+  updateAlertBtn();
   if(ui.tab==="mois"&&ui.anim){ ui.anim=false; requestAnimationFrame(animateFlow); } else if(ui.tab==="mois") settleFlow();
 }
 function viewAccounts(){
@@ -1289,7 +1363,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3><button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -2019,6 +2093,10 @@ document.addEventListener("click",async e=>{
     case "catYear": openSheet({type:"yearSeries",y:ui.year,cat:a.dataset.cat}); break;
     case "personYear": openSheet({type:"yearSeries",y:ui.year,id:a.dataset.id}); break;
     case "occAcc": s.acc=a.dataset.v; renderSheet(); break;
+    case "openAlerts": pushOrOpen({type:"alerts",ym:ui.ym}); break;
+    case "alertIgnore": { cfg.alertIgnore=cfg.alertIgnore||{}; const k=a.dataset.k; cfg.alertIgnore[k]=true; changed(["config"]); toast("Alerte ignorée",()=>{ delete cfg.alertIgnore[k]; changed(["config"]); }); break; }
+    case "alertDel": { const f=findTx(a.dataset.id); if(!f) break; const t=JSON.parse(JSON.stringify(f.t)); const docs=new Set(); removeTx(t.id,docs); changed([...docs]); toast("Doublon supprimé",()=>{ const d2=new Set(); upsertTx(t,d2); changed([...d2]); }); break; }
+    case "alertLink": { const f=findTx(a.dataset.id); if(!f) break; f.t.link=a.dataset.key; changed(["tx-"+f.ym]); toast("Rattachée à l'échéance",()=>{ const g=findTx(a.dataset.id); if(g){ delete g.t.link; changed(["tx-"+g.ym]); } }); break; }
     case "occAct": pushOrOpen({type:"occAct",ym:s?s.ym:ui.ym,key:a.dataset.key}); break;
     case "occConfirm": { const o=findOcc(s.key); if(!o) break; const t=confirmOcc(o,s.acc); popSheet(); toast(`« ${o.label} » confirmé`,()=>{ const dd=new Set(); removeTx(t.id,dd); changed([...dd]); if(stack.length) renderSheet(); }); break; }
     case "occOther": { const o=findOcc(s.key); if(!o) break; const d=newWizard("tx"); d.date=o.p.noDate?(o.date.slice(0,7)===CUR_YM?TODAY:o.date):o.date; prefillFromOcc(d,o); if(o.p.kind==="expense"&&s.acc&&accById(s.acc)) d.acc=s.acc; d.step="amount"; pushSheet({type:"wizard",d}); break; }
