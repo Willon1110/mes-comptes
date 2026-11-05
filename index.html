@@ -165,7 +165,20 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(
 .tab svg{width:21px;height:21px}
 .tab.on{color:var(--accent)}
 .fab{width:58px;height:58px;border-radius:20px;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;margin:0 auto;transform:translateY(-14px);box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 45%,transparent)}
-.fab svg{width:26px;height:26px}
+.fab svg{width:26px;height:26px;transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+.fab.open svg{transform:rotate(135deg)}
+.fab.open{background:var(--ink);color:var(--surface)}
+#fan{position:fixed;inset:0;z-index:29;pointer-events:none}
+#fan .fanbk{position:absolute;inset:0;background:rgba(8,10,28,.55);opacity:0;transition:opacity .25s;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#fan.on{pointer-events:auto}#fan.on .fanbk{opacity:1}
+#fan .fanb{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));width:92px;margin-left:-46px;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;padding:0;color:#fff;opacity:0;transform:translate(0,70px) scale(.3);transition:transform .38s cubic-bezier(.3,1.5,.5,1) var(--d),opacity .2s var(--d)}
+#fan .fanb .ic{width:58px;height:58px;border-radius:20px;background:var(--surface);color:var(--accent);display:grid;place-items:center;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+#fan .fanb .ic svg{width:26px;height:26px}
+#fan .fanb b{font-size:13px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+#fan.on .fanb{opacity:1}
+#fan.on .f0{transform:translate(-104px,-6px)}#fan.on .f1{transform:translate(0,-62px)}#fan.on .f2{transform:translate(104px,-6px)}
+#fan .f1 .ic{color:var(--pos)}#fan .f2 .ic{color:var(--title)}
+@media (prefers-reduced-motion: reduce){#fan .fanb,.fab svg{transition:none}}
 /* feuille */
 .scrim{position:fixed;inset:0;background:rgba(30,18,10,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
 .scrim.open{opacity:1;pointer-events:auto}
@@ -593,7 +606,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.1 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
@@ -619,7 +632,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.1";
+const VERSION = "4.2";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -1990,6 +2003,17 @@ function saveEst(s){
 }
 /* ----- listes du mois (v2.6) ----- */
 function occStatus(r){ return r.skipped?'<span class="chip">pas ce mois-ci</span>':r.done?'<span class="chip" style="background:var(--pos-soft);color:var(--pos)">confirmé</span>':r.late?'<span class="chip warn">en retard</span>':'<span class="chip">à venir</span>'; }
+/* ---------- bouton + en éventail ---------- */
+let FAN=false;
+function openFan(){
+  FAN=true; const fab=document.querySelector(".fab"); if(fab){ fab.classList.add("open"); fab.setAttribute("aria-expanded","true"); }
+  let el=document.getElementById("fan"); if(!el){ el=document.createElement("div"); el.id="fan"; document.body.appendChild(el); }
+  el.innerHTML=`<div class="fanbk" data-act="fanClose"></div>${[["expense",I.out,"Dépense"],["income",I.in,"Revenu"],["transfer",I.swap,"Virement"]].map(([k,ic,l],i)=>`<button class="fanb f${i}" data-act="fanPick" data-v="${k}" style="--d:${i*45}ms"><span class="ic">${ic}</span><b>${l}</b></button>`).join("")}`;
+  el.classList.remove("on"); void el.offsetWidth; el.classList.add("on");
+  try{ navigator.vibrate&&navigator.vibrate(10); }catch(e){}
+}
+function closeFan(){ FAN=false; const fab=document.querySelector(".fab"); if(fab){ fab.classList.remove("open"); fab.setAttribute("aria-expanded","false"); } const el=document.getElementById("fan"); if(el){ el.classList.remove("on"); setTimeout(()=>{ if(!FAN) el.innerHTML=""; },260); } }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&FAN) closeFan(); });
 function justDone(key){ return ui.justDone&&ui.justDone.key===key&&Date.now()<ui.justDone.until; }
 function occRow(r){
   const p=r.o.p, cur=r.cur;
@@ -2451,7 +2475,7 @@ document.addEventListener("click",async e=>{
   const a=e.target.closest("[data-act]"); if(!a) return;
   const act=a.dataset.act, s=topS();
   switch(act){
-    case "tab": ui.tab=a.dataset.tab; try{localStorage.setItem(LS+".tab",ui.tab)}catch(x){} render(); window.scrollTo(0,0); break;
+    case "tab": if(FAN) closeFan(); ui.tab=a.dataset.tab; try{localStorage.setItem(LS+".tab",ui.tab)}catch(x){} render(); window.scrollTo(0,0); break;
     case "prevM": ui.ym=addMonths(ui.ym,-1); ui.anim=true; render(); break;
     case "nextM": ui.ym=addMonths(ui.ym,1); ui.anim=true; render(); break;
     case "prevY": ui.year--; render(); break;
@@ -2459,7 +2483,9 @@ document.addEventListener("click",async e=>{
     case "goMonth": ui.ym=a.dataset.ym; ui.tab="mois"; ui.anim=true; closeSheet(); render(); window.scrollTo(0,0); break;
     case "close": if(stack.length&&topS().type==="onboard") break; closeSheet(); break;
     case "back": popSheet(); break;
-    case "fab": if(loading()) break; openSheet({type:"wizard",d:newWizard("tx")}); break;
+    case "fab": if(loading()) break; if(FAN) closeFan(); else openFan(); break;
+    case "fanClose": closeFan(); break;
+    case "fanPick": { const k=a.dataset.v; closeFan(); setTimeout(()=>openSheet({type:"wizard",d:newWizard("tx",k)}),120); break; }
     case "newPlan": if(loading()) break; pushOrOpen({type:"wizard",d:newWizard("plan")}); break;
     case "newPlanIncome": pushSheet({type:"wizard",d:newWizard("plan","income")}); break;
     case "otherIncome": pushSheet({type:"wizard",d:newWizard("tx","income")}); break;
@@ -3141,7 +3167,7 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("[data-tour]"); if(b){ e.preventDefault(); e.stopPropagation(); if(b.dataset.tour==="skip") tourEnd(); else if(TR){ TR.i++; tourShow(); } return; }
   if(TR&&!TR.waiting){ const st=tourSteps()[TR.i]; if(st&&st.tap&&e.target.closest(st.sel)){ TR.waiting=true; const el=document.getElementById("tour"); if(el) el.remove(); } }
 },true);
-setInterval(()=>{ if(TR&&TR.waiting&&!stack.length){ TR.waiting=false; TR.i++; tourShow(); } },500);
+setInterval(()=>{ if(TR&&TR.waiting&&!stack.length&&!FAN){ TR.waiting=false; TR.i++; tourShow(); } },500);
 addEventListener("resize",()=>{ if(TR&&!TR.waiting) tourShow(); });
 
 /* ---------- fermer en glissant vers le bas ---------- */
