@@ -426,6 +426,8 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .thb .sw3{display:flex;margin-bottom:6px}.thb .sw3 i{width:22px;height:22px;border-radius:50%;border:2px solid var(--surface);margin-right:-6px}
 .thb b{font-size:14px;color:var(--ink)}.thb small{font-size:11.5px;color:var(--muted)}
 .bggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.aucol{width:36px;height:36px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1.5px var(--line);padding:0;font-size:9px;font-weight:800;color:#fff}
+.aucol.on{box-shadow:0 0 0 3px var(--accent)}
 .bgb{display:flex;flex-direction:column;gap:4px;align-items:center;padding:0;border:0;background:none}
 .bgb .bgprev{display:block;width:100%;height:64px;border-radius:12px;background-color:#1B2350;border:2px solid var(--line)}
 .bgb.on .bgprev{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
@@ -606,7 +608,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.3 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
@@ -632,7 +634,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.2";
+const VERSION = "4.3";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -862,7 +864,7 @@ function monthAlerts(ym){
     const strong=same||(a.link&&a.link===b.link);
     const [o,n]=a.date<=b.date?[a,b]:[b,a];
     add({key:"dup:"+[a.id,b.id].sort().join("+"),type:strong?"dup":"same",strong,title:strong?"Doublon probable":"Montant identique",
-      text:strong?(a.link&&a.link===b.link?"La même échéance a été confirmée deux fois.":"Même montant, même compte et même catégorie, "+ecart(a,b)+"."):"Même montant, "+ecart(a,b)+", mais pas le même poste. À vérifier.",
+      text:strong?(a.link&&a.link===b.link?"La même échéance a été confirmée deux fois.":"Même montant, même compte et même catégorie, "+ecart(a,b)+"."):"Même montant, "+ecart(a,b)+", mais pas la même catégorie ni le même compte. À vérifier.",
       txs:[o,n],del:strong?n.id:null});
   }
   // 3 échéance en double
@@ -948,7 +950,7 @@ function setSync(s){
   const map={local:["ok","Enregistré sur ce téléphone"],loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
   const [c,l]=map[s]||map.offline; const d=document.getElementById("syncdot"), t=document.getElementById("synctxt"); if(d) d.className="dot "+c; if(t) t.textContent=l;
 }
-function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts","recent"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
+function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts","recent","display"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
 function scheduleSave(){ S.dirty=true; clearTimeout(saveT); saveT=setTimeout(doSave,700); }
 const isNetErr=e=>!navigator.onLine||/fetch|network|Failed to fetch|Load failed|NetworkError/i.test(String(e&&(e.message||e)));
 async function doSave(){
@@ -1218,7 +1220,7 @@ function accRing(vals,rate){
 function viewAccounts(){
   const ym=ui.ym, c=calcMonth(ym), [y]=ym.split("-"), rate=c.hasRate?c.rA:c.rP, mode=uiPref("accView","cards"), ring=uiPref("accRing",false);
   const cur=ym===CUR_YM, startOf=a=>cur?balanceAt(a.id,TODAY):endBalance(a.id,addMonths(ym,-1)), endOf=a=>endBalance(a.id,ym);
-  const note=`<p class="note">Touche un compte pour voir ses mouvements du mois et les écarts entre prévu et réel. Appui long pour le déplacer.</p>`;
+  const note=`<p class="note">Touche un compte pour voir ses opérations du mois et les écarts entre prévu et réel. Appui long pour le déplacer.</p>`;
   let h="";
   if(mode==="arrow"){
     h+=periodBar(`${monthName(ym)} ${y}`,cur?"Aujourd'hui → fin de mois":ym<CUR_YM?"Début → fin de mois":"Début → fin de mois (prévu)","prevM","nextM");
@@ -1250,7 +1252,10 @@ function viewAccounts(){
 
 /* ---------- affichage : thèmes et arrière-plans ---------- */
 const THEMES=[["ocre","Ocre et indigo","fond indigo, cartes crème, accents ocre",["#1B2350","#FBF6EE","#A8661A"]],["journal","Papier journal","noir et blanc, filets fins, accent rouge",["#F4F1EA","#FFFFFF","#C8102E"]],["foret","Forêt nordique","vert sapin, sauge et bois clair",["#1E3A2F","#F1F5EC","#B5793C"]],["lagon","Lagon en verre","dégradé bleu, cartes en verre dépoli",["#0B3B5C","#2BB3C0","#7FF0E0"]]];
-const BGS=[["none","Uni"],["topo","Courbes de niveau"],["cross","Croix suisses"],["waves","Vagues du Léman"],["mount","Montagnes en couches"],["dots","Grille de points"],["terrazzo","Terrazzo"],["aurora","Aurore"],["stripes","Fines rayures"]];
+const BGS=[["none","Uni"],["topo","Courbes de niveau"],["aurora","Aurore"]];
+const AU_COLORS=["#A8661A","#3F8A86","#C2603A","#E2B262","#2E3A7A","#6F8B4E","#8A4F6D","#4F6D8A","#B23A2E","#5FE3D0"];
+const bgPref=()=>{ const v=uiPref("bg","none"); return BGS.some(b=>b[0]===v)?v:"none"; };
+const auCols=()=>[uiPref("au1",""),uiPref("au2","")];
 const hex2rgb=h=>{ h=h.replace("#",""); if(h.length===3) h=h.split("").map(x=>x+x).join(""); return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16)); };
 function mixHex(a,b,t){ const A=hex2rgb(a),B=hex2rgb(b); return "#"+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,"0")).join(""); }
 function bgSvg(id,bg,fg,acc){
@@ -1269,32 +1274,41 @@ function bgSvg(id,bg,fg,acc){
 }
 function applyLook(){
   if(typeof cfg==="undefined"||!cfg) return;
-  const th=uiPref("theme","ocre"), bgId=uiPref("bg","none"), root=document.documentElement;
+  const th=uiPref("theme","ocre"), bgId=bgPref(), root=document.documentElement;
   if(th==="ocre") root.removeAttribute("data-theme"); else root.setAttribute("data-theme",th);
   let fx=document.getElementById("bgfx"); if(!fx){ fx=document.createElement("div"); fx.id="bgfx"; fx.setAttribute("aria-hidden","true"); document.body.prepend(fx); }
   const cs=getComputedStyle(root), bg=(cs.getPropertyValue("--bgbase")||cs.getPropertyValue("--bg")).trim()||"#1B2350", fg=cs.getPropertyValue("--on-bg").trim()||"#F4EBDD", acc=cs.getPropertyValue("--accent").trim()||"#A8661A";
   fx.className="bgfx bg-"+bgId; fx.innerHTML=""; fx.style.backgroundImage="";
-  if(bgId==="aurora"){ fx.innerHTML=`<i class="au a1" style="background:${acc}"></i><i class="au a2" style="background:#3F8A86"></i>`; return; }
+  if(bgId==="aurora"){ const [c1,c2]=auCols(); fx.innerHTML=`<i class="au a1" style="background:${c1||acc}"></i><i class="au a2" style="background:${c2||"#3F8A86"}"></i>`; return; }
   const s=bgSvg(bgId,/^#/.test(bg)?bg:"#1B2350",/^#/.test(fg)?fg:"#F4EBDD",/^#/.test(acc)?acc:"#A8661A"); if(!s) return;
   const url=`url("data:image/svg+xml,${encodeURIComponent(s)}")`;
   if(bgId==="mount"){ fx.innerHTML=`<div class="mt" style="background-image:${url}"></div>`; }
   else fx.style.backgroundImage=url;
 }
 addEventListener("scroll",()=>{ const m=document.querySelector("#bgfx .mt"); if(m) m.style.transform=`translateY(${Math.min(120,scrollY*0.12)}px)`; },{passive:true});
+function sheetDisplay(){
+  const th=(THEMES.find(t=>t[0]===uiPref("theme","ocre"))||THEMES[0])[1], bg=(BGS.find(b=>b[0]===bgPref())||BGS[0])[1], L=yLayout();
+  let h=sheetHead("Affichage","L'apparence de l'appli et de ses onglets");
+  const row=(act,t,m)=>`<button class="row" data-act="${act}"><div class="main"><div class="l">${t}</div><div class="m">${m}</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>`;
+  h+=`<div class="card list">${row("openLook","Thème et arrière-plan",esc(th)+" · "+esc(bg))}${row("openAccLook","Onglet Comptes",{cards:"Tuiles",arrow:"Maintenant → fin de mois",stack:"Cartes bancaires"}[uiPref("accView","cards")]+(uiPref("accRing",false)?" + répartition":""))}${row("openYearCfg","Onglet Année",`${L.tiles.filter(x=>x.on).length} tuiles · ${L.blocks.filter(x=>x.on).length} graphiques`)}</div>`;
+  return h;
+}
 function sheetLook(s){
-  const th=uiPref("theme","ocre"), bgId=uiPref("bg","none");
-  let h=sheetHead("Thème et arrière-plan","Le changement est immédiat");
+  const th=uiPref("theme","ocre"), bgId=bgPref(), [ca,cb]=auCols(), accNow=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#A8661A";
+  let h=sheetHead("Thème et arrière-plan","Le changement s'applique tout de suite");
   h+=`<h4>Thème</h4><div class="thgrid">${THEMES.map(([id,n,dsc,c])=>`<button class="thb ${th===id?"on":""}" data-act="setTheme" data-v="${id}"><span class="sw3">${c.map(x=>`<i style="background:${x}"></i>`).join("")}</span><b>${n}</b><small>${dsc}</small></button>`).join("")}</div>`;
-  h+=`<h4>Arrière-plan</h4><div class="bggrid">${BGS.map(([id,n])=>`<button class="bgb ${bgId===id?"on":""}" data-act="setBg" data-v="${id}"><span class="bgprev" style="${id==="none"?"":`background-image:url(&quot;data:image/svg+xml,${encodeURIComponent(bgSvg(id==="aurora"?"none":id,"#1B2350","#F4EBDD","#A8661A"))}&quot;)`}${id==="aurora"?";background:radial-gradient(circle at 80% 15%,rgba(168,102,26,.7),transparent 60%),radial-gradient(circle at 15% 85%,rgba(63,138,134,.6),transparent 60%),#1B2350":""}${id==="mount"?";background-size:180% auto;background-position:center bottom;background-repeat:no-repeat":""}"></span><small>${n}</small></button>`).join("")}</div>`;
-  h+=`<p class="note">Les motifs prennent les couleurs du thème choisi. Les arrière-plans animés s'arrêtent si ton téléphone demande de réduire les animations.</p>`;
+  h+=`<h4>Arrière-plan</h4><div class="bggrid">${BGS.map(([id,n])=>`<button class="bgb ${bgId===id?"on":""}" data-act="setBg" data-v="${id}"><span class="bgprev" style="${id==="none"?"":`background-image:url(&quot;data:image/svg+xml,${encodeURIComponent(bgSvg(id==="aurora"?"none":id,"#1B2350","#F4EBDD","#A8661A"))}&quot;)`}${id==="aurora"?`;background:radial-gradient(circle at 80% 15%,${ca||accNow}bb,transparent 60%),radial-gradient(circle at 15% 85%,${cb||"#3F8A86"}aa,transparent 60%),#1B2350`:""}${id==="mount"?";background-size:180% auto;background-position:center bottom;background-repeat:no-repeat":""}"></span><small>${n}</small></button>`).join("")}</div>`;
+  if(bgId==="aurora"){ const pick=(k,cur,def)=>`<div class="chips">${[""].concat(AU_COLORS).map(c=>`<button type="button" class="aucol ${cur===c?"on":""}" data-act="setAu" data-k="${k}" data-v="${c}" style="background:${c||def}" aria-label="${c?"Couleur "+c:"Couleur par défaut"}">${c?"":"auto"}</button>`).join("")}</div>`;
+    h+=`<h4>Couleurs de l'aurore</h4><div class="form">${fld("Halo du haut",pick("au1",ca,accNow))}${fld("Halo du bas",pick("au2",cb,"#3F8A86"))}</div>`; }
+  h+=`<p class="note">Les courbes de niveau prennent les couleurs du thème choisi. L'aurore bouge lentement et s'arrête si ton téléphone demande de réduire les animations.</p>`;
   return h;
 }
 function sheetAccLook(s){
   const m=uiPref("accView","cards"), ring=uiPref("accRing",false);
-  let h=sheetHead("Onglet Comptes","Choisis la présentation");
-  const opts=[["cards","Actuelle","tuiles de couleur, bascule Aujourd'hui / Fin de mois"],["arrow","A · Maintenant → fin de mois","une liste, chaque solde avec son prévu de fin de mois"],["stack","B · Cartes bancaires","cartes empilées aux couleurs de tes comptes"]];
+  let h=sheetHead("Onglet Comptes","Présentation des comptes");
+  const opts=[["cards","Tuiles","tuiles de couleur, bascule Aujourd'hui / Fin de mois"],["arrow","Maintenant → fin de mois","une liste, chaque solde avec son prévu de fin de mois"],["stack","Cartes bancaires","cartes empilées aux couleurs de tes comptes"]];
   h+=`<div class="tiles">${opts.map(([v,t,d])=>`<button class="tile ${m===v?"on":""}" data-act="setAccLook" data-v="${v}"><div><b>${t}</b><span>${d}</span></div></button>`).join("")}</div>`;
-  h+=`<div class="card list" style="margin-top:14px"><div class="row"><div class="main"><div class="l">C · Répartition en anneau</div><div class="m">s'affiche en dessous de la présentation choisie</div></div><button class="tgl ${ring?"on":""}" data-act="setAccRing" role="switch" aria-checked="${ring}" aria-label="Afficher la répartition en anneau"><i></i></button></div></div>`;
+  h+=`<div class="card list" style="margin-top:14px"><div class="row"><div class="main"><div class="l">Répartition en anneau</div><div class="m">s'affiche en dessous de la présentation choisie</div></div><button class="tgl ${ring?"on":""}" data-act="setAccRing" role="switch" aria-checked="${ring}" aria-label="Afficher la répartition en anneau"><i></i></button></div></div>`;
   return h;
 }
 function animateFlow(){
@@ -1622,13 +1636,13 @@ function viewYear(){
   const tl=L.tiles.filter(x=>x.on), bl=L.blocks.filter(x=>x.on);
   if(tl.length) h+=`<div class="ytiles" data-dgbox="yt">${tl.map(x=>yTileHtml(x.id,Y,true)).join("")}</div>`;
   h+=`<div class="yblocks" data-dgbox="yb">${bl.map(x=>{ let inner=""; try{ inner=YB[x.id].render(Y); }catch(e){ inner=""; } return `<section class="block yitem" data-dg="b:${x.id}">${inner}</section>`; }).join("")}</div>`;
-  if(!tl.length&&!bl.length) h+=`<div class="card pad" style="margin-top:14px"><p class="note" style="margin:0">Tout est masqué. Choisis quoi afficher dans Réglages › Récap de l'année.</p></div>`;
+  if(!tl.length&&!bl.length) h+=`<div class="card pad" style="margin-top:14px"><p class="note" style="margin:0">Tout est masqué. Choisis quoi afficher dans Réglages › Affichage › Onglet Année.</p></div>`;
   h+=`<p class="note" style="text-align:center;margin-top:18px">Appui long sur une tuile ou un graphique pour le déplacer ou le masquer.</p>`;
   return h;
 }
 function sheetYearCfg(){
   const L=yLayout(), on=L.tiles.filter(x=>x.on).length;
-  let h=sheetHead("Récap de l'année","Touche pour un aperçu · interrupteur pour afficher · ≡ appui long pour déplacer");
+  let h=sheetHead("Onglet Année","Touche pour un aperçu · interrupteur pour afficher · ≡ appui long pour déplacer");
   const row=(k,id,d,isOn)=>`<div class="row ycf" data-dg="${k}:${id}" data-dgh="1"><span class="grip" aria-hidden="true">≡</span><button class="main" style="background:none;border:0;padding:0;text-align:left" data-act="yPrev" data-id="${k}:${id}"><div class="l">${esc(d.name)}</div>${d.desc?`<div class="m">${esc(d.desc)}</div>`:""}</button><button class="tgl ${isOn?"on":""}" data-act="yTog" data-id="${k}:${id}" role="switch" aria-checked="${isOn}" aria-label="Afficher ${esc(d.name)}"><i></i></button></div>`;
   h+=`<h4>Tuiles du haut · ${on} sur ${YT_MAX} au maximum</h4><div class="card list" data-dgbox="lt">${L.tiles.map(x=>row("t",x.id,YT[x.id],x.on)).join("")}</div>`;
   h+=`<h4>Graphiques</h4><div class="card list" data-dgbox="lb">${L.blocks.map(x=>row("b",x.id,YB[x.id],x.on)).join("")}</div>`;
@@ -1694,17 +1708,13 @@ function viewSettings(){
   h+=`<div class="sgrid">
     <button class="card create" data-act="newPlan"><span class="ic">${I.spark}</span><div><b>Créer un événement</b><small>Un revenu, une dépense ou un virement prévu, pas à pas</small></div></button>
     <button class="card navcard" data-act="openPlans"><span class="ic">${I.fixed}</span><div class="main"><b>Événements prévus</b><small>${cfg.plans.length} événement${cfg.plans.length>1?"s":""} · modifier ou supprimer</small></div>${I.right}</button>
-    <button class="card navcard" data-act="openCats"><span class="ic">${I.tag}</span><div class="main"><b>Gérer les catégories</b><small>${cfg.categories.length} catégories · sous-catégories, anniversaires, Noël</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openCats"><span class="ic">${I.tag}</span><div class="main"><b>Catégories</b><small>${cfg.categories.length} catégories · sous-catégories, anniversaires, Noël</small></div>${I.right}</button>
     <button class="card navcard" data-act="openAccounts"><span class="ic">${I.bank}</span><div class="main"><b>Comptes</b><small>${cfg.accounts.map(a=>`<span class="cdot" style="--c:${a.color}"></span>`).join("")} ${cfg.accounts.length} comptes · noms, soldes, couleurs</small></div>${I.right}</button>
-    <button class="card navcard" data-act="openMembers"><span class="ic">${I.people}</span><div class="main"><b>Personnes du foyer</b><small>${members().length?esc(members().map(m=>m.name).join(", ")):"personne pour l'instant"}</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openMembers"><span class="ic">${I.people}</span><div class="main"><b>Personnes</b><small>${members().length?esc(members().map(m=>m.name).join(", ")):"personne pour l'instant"}</small></div>${I.right}</button>
 
-    <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>${LOCAL_ONLY?"Sauvegarde et sécurité":"Compte, sauvegarde et sécurité"}</b><small>${LOCAL_ONLY?"Fichiers de sauvegarde, code, empreinte":"Connexion, double authentification, code, empreinte, fichiers de sauvegarde"}</small></div>${I.right}</button>
-  </div>
-  <h4 class="sechead">Affichage</h4><div class="sgrid">
-    <button class="card navcard" data-act="openLook"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M12 3.5a8.5 8.5 0 0 0 0 17"/></svg></span><div class="main"><b>Thème et arrière-plan</b><small>${esc((THEMES.find(t=>t[0]===uiPref("theme","ocre"))||THEMES[0])[1])} · ${esc((BGS.find(b=>b[0]===uiPref("bg","none"))||BGS[0])[1])}</small></div>${I.right}</button>
-    <button class="card navcard" data-act="openAccLook"><span class="ic">${I.bank}</span><div class="main"><b>Onglet Comptes</b><small>${{cards:"Actuelle",arrow:"A · Maintenant → fin de mois",stack:"B · Cartes bancaires"}[uiPref("accView","cards")]}${uiPref("accRing",false)?" + anneau":""}</small></div>${I.right}</button>
-    <button class="card navcard" data-act="openYearCfg"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M10 20V5M15 20v-6M20 20V8"/></svg></span><div class="main"><b>Récap de l'année</b><small>${(()=>{ const L=yLayout(); return L.tiles.filter(x=>x.on).length+" tuiles · "+L.blocks.filter(x=>x.on).length+" graphiques affichés"; })()} · ordre et aperçu</small></div>${I.right}</button>
-    <button class="card navcard" data-act="startTour"><span class="ic">${I.spark}</span><div class="main"><b>Revoir le tutoriel</b><small>La visite guidée de l'appli, écran par écran</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>${LOCAL_ONLY?"Sécurité et sauvegarde":"Connexion, sécurité et sauvegarde"}</b><small>${LOCAL_ONLY?"Fichiers de sauvegarde, code, empreinte":"Connexion, double authentification, code, empreinte, fichiers de sauvegarde"}</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openDisplay"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M12 3.5a8.5 8.5 0 0 0 0 17"/></svg></span><div class="main"><b>Affichage</b><small>Thème, arrière-plan, onglets Comptes et Année</small></div>${I.right}</button>
+    <button class="card navcard" data-act="startTour"><span class="ic">${I.spark}</span><div class="main"><b>Visite guidée</b><small>Découvrir l'appli écran par écran</small></div>${I.right}</button>
   </div>`;
   h+=`<p class="note" style="text-align:center;margin-top:22px">Mes Comptes v${VERSION}</p>`;
   return h;
@@ -1719,7 +1729,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub,extra){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3>${extra||""}<button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,look:sheetLook,accLook:sheetAccLook,recent:sheetRecent,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,display:sheetDisplay,look:sheetLook,accLook:sheetAccLook,recent:sheetRecent,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); if(s.type==="plans"&&s.search&&s.q) filterPlans(s.q); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1980,15 +1990,15 @@ function openEst(){
 function sheetEst(s){
   const d=s.d, rows=estRows(s.ym).concat(s.extra.filter(k=>!estRows(s.ym).some(r=>r.key===k)).map(k=>{ const [cat,acc]=k.slice(2).split("|"); return {key:k,label:cat,cat,acc,def:0,actual:0,last:0}; }));
   let h=sheetHead("Prévisions des dépenses variables",`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
-  h+=`<p class="note" style="margin:0 0 10px">Indique combien tu penses dépenser ce mois-ci pour chaque poste. Laisse vide pour garder le montant habituel (en gris).</p>`;
-  if(!rows.length) h+=`<p class="note">Aucune dépense variable prévue. Ajoute un poste ci-dessous, ou crée un budget variable dans Réglages › Créer un événement.</p>`;
+  h+=`<p class="note" style="margin:0 0 10px">Indique combien tu penses dépenser ce mois-ci pour chaque budget. Laisse vide pour garder le montant habituel (en gris).</p>`;
+  if(!rows.length) h+=`<p class="note">Aucune dépense variable prévue. Ajoute un budget ci-dessous, ou crée un budget variable dans Réglages › Créer un événement.</p>`;
   h+=`<div class="card pad" style="padding-top:2px;padding-bottom:2px">${rows.map((r,i)=>{ const cur=curOf(r.acc), lastOfCat=!rows.slice(i+1).some(x=>x.cat===r.cat);
     return `${lastOfCat&&i<rows.length?"":""}<div class="vrow"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.label)}</b><small>${esc(accName(r.acc))}${r.def?` · habituel ${fmt(r.def,cur,0)}`:""}</small><small>dépensé ${fmt(r.actual||0,cur,0)} · mois passé ${fmt(r.last||0,cur,0)}</small></div>${inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${r.def?numStr(r.def):"0"}" aria-label="Prévision ${esc(r.label)}"`)}</div>${lastOfCat?`<button class="lnk" style="margin:-2px 0 8px" data-act="estMore" data-cat="${esc(r.cat)}">+ un autre compte pour ${esc(r.cat)}</button>`:""}`; }).join("")}</div>`;
-  { const sel2=d.addAccs||[]; h+=`<h4>Ajouter un poste pour ce mois</h4><div class="form">${fld("Catégorie",sel("addCat",catsOf("expense","variable").concat(catsOf("expense","special")).map(x=>[x.name,x.name])))}
+  { const sel2=d.addAccs||[]; h+=`<h4>Ajouter un budget</h4><div class="form">${fld("Catégorie",sel("addCat",catsOf("expense","variable").concat(catsOf("expense","special")).map(x=>[x.name,x.name])))}
     ${fld("Sur quel(s) compte(s) ?",`<div class="chips">${cfg.accounts.map(a=>`<button type="button" class="chipbtn ${sel2.includes(a.id)?"on":""}" style="--c:${a.color}" data-act="estAcc" data-v="${a.id}" aria-pressed="${sel2.includes(a.id)}"><span class="cdot" style="--c:${a.color}"></span>${esc(a.name)}</button>`).join("")}</div>`)}
     ${sel2.length?`<div class="grid2">${sel2.map(id=>fld(`Montant ${esc(accName(id))} (${curOf(id)})`,inp("na:"+id,"text",'inputmode="decimal" placeholder="0"'))).join("")}</div>`:""}
     ${sel2.length?fld("Pour quand ?",segF("addScope",[["month","Ce mois-ci"],["all","Tous les mois"]]),d.addScope==="all"?"Crée ou met à jour le budget variable de chaque compte, chaque mois à partir de "+monthName(s.ym)+".":"Seulement pour "+monthName(s.ym)+"."):""}
-    <button class="btn" data-act="estAdd" ${sel2.length?"":"disabled"}>Ajouter ce poste</button></div>`; }
+    <button class="btn" data-act="estAdd" ${sel2.length?"":"disabled"}>Ajouter ce budget</button></div>`; }
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
   h+=`<div class="actions"><button class="btn primary block" data-act="saveEst">Enregistrer les prévisions</button></div>`;
   return h;
@@ -2067,7 +2077,7 @@ function sheetVarList(s){
   const P=rows.reduce((x,v)=>x+conv(v.planned,curOf(v.acc),c.rP),0), A=rows.reduce((x,v)=>x+conv(v.actual,curOf(v.acc),c.rA),0);
   let h=sheetHead(s.special?"Dépenses spéciales":"Dépenses variables",`${monthName(s.ym)} ${s.ym.slice(0,4)} · touche une catégorie pour le détail`);
   const ADV=s.special?specItems(c,s.ym).advance.reduce((x,a)=>x+a.amount,0):0;
-  h+=`<div class="sumgrid"><div><span>Dépensé</span><b>${fmt(A,"EUR")}</b></div><div><span>Budget</span><b>${fmt(P,"EUR")}</b></div><div><span>Reste</span><b class="${P-(A-ADV)<0?"neg":""}">${fmt(P-(A-ADV),"EUR")}</b></div>${ADV>0?`<div><span>Dont en avance</span><b>${fmt(ADV,"EUR")}</b></div>`:`<div><span>Postes</span><b>${rows.length}</b></div>`}</div>`;
+  h+=`<div class="sumgrid"><div><span>Dépensé</span><b>${fmt(A,"EUR")}</b></div><div><span>Budget</span><b>${fmt(P,"EUR")}</b></div><div><span>Reste</span><b class="${P-(A-ADV)<0?"neg":""}">${fmt(P-(A-ADV),"EUR")}</b></div>${ADV>0?`<div><span>Dont en avance</span><b>${fmt(ADV,"EUR")}</b></div>`:`<div><span>Budgets</span><b>${rows.length}</b></div>`}</div>`;
   if(s.special){ const it=specItems(c,s.ym), ev=specEvRows(it,0), xm=it.xmas.map(o=>{ const r=r2(o.budget-o.spent); return `<div class="row"><div class="main"><div class="l">Noël ${esc(o.name)}</div><div class="m">dépensé ${fmt(o.spent,"EUR")} sur l'année · budget ${fmt(o.budget,"EUR")}</div>${o.gift?`<div class="m gift">🎁 ${esc(o.gift)}</div>`:""}</div><div class="amt"><b class="${r<0?"neg":""}">${r<0?"dépassé de "+fmt(-r,"EUR"):"reste "+fmt(r,"EUR")}</b></div></div>`; }).join("");
     if(ev||xm) h+=`<h4>Ce mois-ci</h4><div class="card pad tile spec" style="display:block">${xm?`<div class="list">${xm}</div>`:""}${ev}</div><p class="note">Les cadeaux achetés avant le mois de l'événement comptent le mois où tu les paies, et le prévu de l'événement baisse d'autant.</p>`; }
   h+=rows.length?`<div class="card list">${rows.map(v=>{ const cur=curOf(v.acc), adv=v.planned===0&&isGiftCat(catByName(v.cat)), pct=adv?0:v.planned>0?v.actual/v.planned:(v.actual>0?1.01:0), rest=v.planned-v.actual;
@@ -2218,14 +2228,14 @@ function sheetAccount(s){
   const pr=c.pointRows.filter(r=>{ const p=r.o.p; return p.acc===a.id||p.from===a.id||p.to===a.id; });
   const vr=c.varRows.filter(v=>v.acc===a.id), mv=c.tx.filter(t=>txFlows(t).some(([id])=>id===a.id));
   const dot=`<span class="cdot" style="--c:${a.color};margin-right:8px;width:14px;height:14px"></span>`;
-  if(s.view==="plan"){ let h=sheetHead(`${dot}Prévu ce mois`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)}`); h+=`<div class="sumgrid"><div><span>Mouvements prévus</span><b class="${cls(P)}">${sfmt(P,cur)}</b></div><div><span>Réalisé${ym===CUR_YM?" à date":""}</span><b class="${cls(A)}">${sfmt(A,cur)}</b></div></div>`; h+=pr.length||vr.length?`<div class="card list">${pr.map(r=>pointRow(r,a.id)).join("")}${vr.map(varRow).join("")}</div>`:`<p class="note">Rien de prévu sur ce compte ce mois-ci.</p>`; return h; }
-  if(s.view==="real"){ let h=sheetHead(`${dot}Mouvements réels`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)} · ${mv.length} opération${mv.length>1?"s":""}`); h+=mv.length?`<div class="card list">${mv.map(t=>txRow(t,a.id)).join("")}</div>`:`<p class="note">Aucun mouvement saisi sur ce compte ce mois-ci.</p>`; return h; }
+  if(s.view==="plan"){ let h=sheetHead(`${dot}Prévu ce mois`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)}`); h+=`<div class="sumgrid"><div><span>Prévu ce mois</span><b class="${cls(P)}">${sfmt(P,cur)}</b></div><div><span>Réel${ym===CUR_YM?" à ce jour":""}</span><b class="${cls(A)}">${sfmt(A,cur)}</b></div></div>`; h+=pr.length||vr.length?`<div class="card list">${pr.map(r=>pointRow(r,a.id)).join("")}${vr.map(varRow).join("")}</div>`:`<p class="note">Rien de prévu sur ce compte ce mois-ci.</p>`; return h; }
+  if(s.view==="real"){ let h=sheetHead(`${dot}Opérations du mois`,`${esc(a.name)} · ${monthName(ym)} ${ym.slice(0,4)} · ${mv.length} opération${mv.length>1?"s":""}`); h+=mv.length?`<div class="card list">${mv.map(t=>txRow(t,a.id)).join("")}</div>`:`<p class="note">Aucune opération sur ce compte ce mois-ci.</p>`; return h; }
   let h=sheetHead(`${dot}${esc(a.name)}`,`${monthName(ym)} ${ym.slice(0,4)} · ${cur}`);
   h+=`<div class="sumgrid"><div><span>Début de mois</span><b>${isNaN(start)?"—":fmt(start,cur,0)}</b></div><div><span>${ym<CUR_YM?"Fin de mois":"Fin de mois prévue"}</span><b>${isNaN(end)?"—":fmt(end,cur,0)}</b></div>
-    <div><span>Mouvements prévus</span><b class="${cls(P)}">${sfmt(P,cur,0)}</b></div><div><span>Mouvements réels${ym===CUR_YM?" à date":""}</span><b class="${cls(A)}">${sfmt(A,cur,0)}</b></div>
+    <div><span>Prévu ce mois</span><b class="${cls(P)}">${sfmt(P,cur,0)}</b></div><div><span>Réel${ym===CUR_YM?" à ce jour":""}</span><b class="${cls(A)}">${sfmt(A,cur,0)}</b></div>
     ${now!=null?`<div><span>Solde actuel</span><b>${fmt(now,cur,0)}</b></div>`:""}<div><span>Écart réel − prévu</span><b class="${cls(A-P)}">${sfmt(A-P,cur,0)}</b></div></div>`;
   const late=pr.filter(r=>r.late).length, todo=pr.filter(r=>!r.done).length;
-  h+=`<div class="pgrid" style="margin-top:14px"><button class="pgb" data-act="accSub" data-v="plan" data-id="${a.id}"><span class="ic" style="color:var(--title)">${I.fixed}</span><b>Prévu ce mois</b><small>${pr.length+vr.length} ligne${pr.length+vr.length>1?"s":""}${todo?` · ${todo} à confirmer`:""}</small>${late?`<small class="neg" style="font-weight:700">${late} en retard</small>`:""}</button><button class="pgb" data-act="accSub" data-v="real" data-id="${a.id}"><span class="ic" style="color:var(--accent)">${I.list}</span><b>Mouvements réels</b><small>${mv.length} opération${mv.length>1?"s":""}</small></button></div>`;
+  h+=`<div class="pgrid" style="margin-top:14px"><button class="pgb" data-act="accSub" data-v="plan" data-id="${a.id}"><span class="ic" style="color:var(--title)">${I.fixed}</span><b>Prévu ce mois</b><small>${pr.length+vr.length} ligne${pr.length+vr.length>1?"s":""}${todo?` · ${todo} à confirmer`:""}</small>${late?`<small class="neg" style="font-weight:700">${late} en retard</small>`:""}</button><button class="pgb" data-act="accSub" data-v="real" data-id="${a.id}"><span class="ic" style="color:var(--accent)">${I.list}</span><b>Opérations du mois</b><small>${mv.length} opération${mv.length>1?"s":""}</small></button></div>`;
   h+=`<div class="actions"><button class="btn block" data-act="editAccount" data-id="${a.id}">Modifier le compte</button></div>`;
   return h;
 }
@@ -2252,10 +2262,10 @@ function sheetAccEdit(s){
 
 /* ----- catégories ----- */
 function sheetSecurity(){
-  let h=sheetHead(LOCAL_ONLY?"Sauvegarde et sécurité":"Compte, sauvegarde et sécurité");
+  let h=sheetHead(LOCAL_ONLY?"Sécurité et sauvegarde":"Connexion, sécurité et sauvegarde");
   const bio=!!localStorage.getItem(BIO_KEY);
   if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Où sont tes données ?</h2></div><div class="card pad"><p style="margin:0 0 8px">Uniquement dans le navigateur de ce téléphone : rien n'est envoyé sur internet.</p><p class="note" style="margin:0">Si tu effaces les données du navigateur, changes ou perds ton téléphone, elles disparaissent. Télécharge régulièrement une sauvegarde ci-dessous et garde-la dans tes fichiers (iCloud Drive, Google Drive…). Pour passer sur un autre téléphone : ouvre l'appli dessus et choisis « J'ai déjà une sauvegarde ».</p></div></section>`;
-  else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Compte et sécurité</h2></div><div class="card list">
+  else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion</h2></div><div class="card list">
     <div class="row"><div class="main"><div class="l">${esc(S.email||"Compte")}</div><div class="m">Données chiffrées de bout en bout · ${mode==="cloud"?"synchronisées":"hors ligne"}</div></div><button class="btn sm" data-act="gLogout">Déconnexion</button></div>
     <button class="row" data-act="openMfa"><div class="main"><div class="l">Double authentification</div><div class="m">Code à 6 chiffres en plus du mot de passe</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
     <button class="row" data-act="openPass"><div class="main"><div class="l">Phrase secrète</div><div class="m">Changer la phrase qui chiffre tes données</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
@@ -2546,7 +2556,7 @@ document.addEventListener("click",async e=>{
           n++; delete s.d["na:"+id]; });
         s.d.addAccs=[]; s.err=""; changed(["config"]); renderSheet(); toast(`Budget ${cat} enregistré pour ${n} compte${n>1?"s":""}, tous les mois`); break; }
       s.d.addAccs.forEach(id=>{ const k="c:"+s.d.addCat+"|"+id, v=String(s.d["na:"+id]||"").trim(); if(!s.extra.includes(k)&&!estRows(s.ym).some(r=>r.key===k)) s.extra.push(k); s.d["e:"+k]=v; delete s.d["na:"+id]; });
-      s.d.addAccs=[]; s.err=""; renderSheet(); toast("Poste ajouté · pense à enregistrer"); break; }
+      s.d.addAccs=[]; s.err=""; renderSheet(); toast("Budget ajouté · pense à enregistrer"); break; }
     case "openChf": openChf(); break;
     case "saveChf": saveChf(s); break;
     case "newChf": { const c=calcMonth(s.ym); stack[stack.length-1]={type:"chf",ym:s.ym,d:{sent:"",recv:"",date:s.ym===CUR_YM?TODAY:s.ym+"-01",link:""},others:chfTransfers(c).done.map(x=>x.id)}; renderSheet(); break; }
@@ -2585,10 +2595,12 @@ document.addEventListener("click",async e=>{
     case "addMember": { const n=String(s.d.nm||"").trim(); if(!n) break; const M=members().slice(); M.push({id:memberId(n),name:n}); setMembers(M); s.d.nm=""; renderSheet(); toast(n+" ajouté"); break; }
     case "delMember": { const M=members(), x=M.find(m=>m.id===a.dataset.id); if(!x) break; askConfirm(`Retirer ${x.name} ?`,"Les opérations déjà attribuées gardent leur montant, mais n'auront plus de nom de personne.","Retirer",()=>{ setMembers(members().filter(m=>m.id!==x.id)); popSheet(); renderSheet(); }); break; }
     case "startTour": startTour(); break;
-    case "openLook": openSheet({type:"look"}); break;
-    case "openAccLook": openSheet({type:"accLook"}); break;
+    case "openDisplay": openSheet({type:"display"}); break;
+    case "openLook": pushOrOpen({type:"look"}); break;
+    case "openAccLook": pushOrOpen({type:"accLook"}); break;
     case "setTheme": setUiPref("theme",a.dataset.v); renderSheet(); break;
     case "setBg": setUiPref("bg",a.dataset.v); renderSheet(); break;
+    case "setAu": setUiPref(a.dataset.k,a.dataset.v); renderSheet(); break;
     case "setAccLook": setUiPref("accView",a.dataset.v); renderSheet(); break;
     case "setAccRing": setUiPref("accRing",!uiPref("accRing",false)); renderSheet(); break;
     case "openRecent": pushOrOpen({type:"recent",n:10}); break;
@@ -2603,10 +2615,10 @@ document.addEventListener("click",async e=>{
     case "obCur": s.d.accs[+a.dataset.i].cur=a.dataset.v; renderSheet(); break;
     case "obFix": { const i=+a.dataset.i, f=OB_FIXED[i], cats=obCats(); s.d.fixed.push({label:f?f[0]:"",amount:"",acc:(s.d.accs.find(x=>x.on)||{}).id,day:"5",cat:f&&cats.includes(f[1])?f[1]:cats[0]}); renderSheet(); break; }
     case "obDone": { obFinish(s.d); closeSheet(); if(a.dataset.v==="tour") setTimeout(startTour,250); else toast("C'est parti !"); break; }
-    case "openYearCfg": openSheet({type:"yearCfg"}); break;
+    case "openYearCfg": pushOrOpen({type:"yearCfg"}); break;
     case "yPrev": pushSheet({type:"yearPrev",id:a.dataset.id}); break;
     case "yTog": { if(yToggle(a.dataset.id)&&stack.length) renderSheet(); break; }
-    case "yHide": { const k=a.dataset.id; if(yToggle(k,false)) toast("Masqué · Réglages › Récap de l'année pour le réafficher",()=>{ yToggle(k,true); }); break; }
+    case "yHide": { const k=a.dataset.id; if(yToggle(k,false)) toast("Masqué · Réglages › Affichage › Onglet Année pour le réafficher",()=>{ yToggle(k,true); }); break; }
     case "yReset": askConfirm("Revenir à l'ordre d'origine ?","Les tuiles et graphiques reprennent leur ordre et leur affichage de départ.","Revenir à l'origine",()=>{ const old=cfg.yearLayout; delete cfg.yearLayout; popSheet(); changed(["config"]); renderSheet(); toast("Ordre d'origine rétabli",()=>{ cfg.yearLayout=old; changed(["config"]); if(stack.length) renderSheet(); }); }); break;
     case "openAlerts": pushOrOpen({type:"alerts",ym:ui.ym}); break;
     case "alertIgnore": { cfg.alertIgnore=cfg.alertIgnore||{}; const k=a.dataset.k; cfg.alertIgnore[k]=true; changed(["config"]); toast("Alerte ignorée",()=>{ delete cfg.alertIgnore[k]; changed(["config"]); }); break; }
