@@ -608,7 +608,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.3 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.4 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
@@ -634,7 +634,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.3";
+const VERSION = "4.4";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -3150,17 +3150,22 @@ const TOUR=[
   {tab:"mois",sel:'.bento [data-act="openFixed"]',t:"Dépenses fixes",x:"Loyer, abonnements… Touche la tuile pour confirmer chaque prélèvement quand il passe sur ton compte. Une pastille rouge signale un retard."},
   {tab:"mois",sel:".b-vb",t:"Dépenses variables",x:"Courses, essence, loisirs : une jauge par catégorie, comparée à ton budget. Vert ça va, orange attention, rouge dépassé."},
   {tab:"mois",sel:".b-sp",t:"Spéciales",x:"Anniversaires, Noël et événements du mois, avec le budget qu'il reste. En décembre, elle se met aux couleurs de Noël."},
-  {tab:"mois",sel:".fab",t:"Ajoute ta première opération",x:"Touche le bouton + maintenant : choisis Dépense, la catégorie, le montant et le compte. La visite reprendra ensuite.",tap:true},
+  {tab:"mois",sel:".fab",t:"Ajoute ta première opération",x:"Touche le bouton + maintenant : choisis Dépense dans l'éventail, puis la catégorie, le montant et le compte. La visite reprendra ensuite.",tap:true},
   {tab:"mois",sel:"#alertbtn",t:"À vérifier",x:"Ce triangle apparaît s'il y a un doublon ou une incohérence dans le mois. Touche-le pour corriger.",optional:true},
-  {tab:"comptes",sel:".accounts",t:"Tes comptes",x:"Le solde de chaque compte, aujourd'hui ou prévu en fin de mois. Touche un compte pour son détail, appui long pour le déplacer."},
+  {tab:"mois",sel:".histbtn",t:"Dernières saisies",x:"Cette horloge montre tes dernières saisies et modifications. Touche une ligne pour la corriger, ou la corbeille pour l'effacer."},
+  {tab:"comptes",sel:".accounts,.arrowlist,.bstack",t:"Tes comptes",x:"Le solde de chaque compte, aujourd'hui ou prévu en fin de mois. Touche un compte pour son détail, appui long pour le déplacer."},
   {tab:"annee",sel:".ytiles,.yblocks",t:"Ton année",x:"Tes chiffres clés et des graphiques. Appui long sur l'un d'eux pour le déplacer ou le masquer."},
-  {tab:"reglages",sel:'[data-act="openPlans"]',t:"Événements prévus",x:"Salaire, prélèvements, budgets, virements : tout ce qui revient se règle ici. Le gros bouton du dessus en crée un nouveau, pas à pas."},
+  {tab:"reglages",sel:'[data-act="openPlans"]',t:"Événements prévus",x:"Salaire, prélèvements, budgets, virements : tout ce qui revient se règle ici, rangé par type, avec une loupe pour chercher. Le gros bouton du dessus en crée un nouveau, pas à pas."},
+  {tab:"reglages",sel:'[data-act="openCats"]',t:"Catégories",x:"Chaque catégorie est marquée fixe, variable ou les deux : seules les bonnes te sont proposées quand tu saisis. Tu peux aussi les réordonner et les fusionner."},
+  {tab:"reglages",sel:'[data-act="openDisplay"]',t:"Affichage",x:"Thème, arrière-plan et présentation des onglets Comptes et Année : personnalise l'appli à ton goût."},
   {tab:"reglages",sel:'[data-act="openSecurity"]',local:true,t:"Pense à sauvegarder",x:"Tes données sont seulement sur ce téléphone. Télécharge une sauvegarde de temps en temps et garde-la dans tes fichiers."},
   {tab:"reglages",sel:'[data-act="startTour"]',t:"À toi de jouer !",x:"Tu peux revoir cette visite à tout moment ici. Bonne gestion !"}];
 let TR=null;
-function startTour(){ closeSheet(); TR={i:0}; tourShow(); }
+function startTour(){ closeSheet(); if(FAN) closeFan(); const keep=ui.tab, list=[];
+  TOUR.filter(s=>!s.local||LOCAL_ONLY).forEach(st=>{ if(ui.tab!==st.tab){ ui.tab=st.tab; render(); } const t=st.sel.split(",").map(x=>document.querySelector(x)).find(Boolean); if(t&&t.getClientRects().length) list.push(st); });
+  if(ui.tab!==keep){ ui.tab=keep; render(); } TR={i:0,list}; tourShow(); }
 function tourEnd(){ TR=null; const el=document.getElementById("tour"); if(el) el.remove(); }
-function tourSteps(){ return TOUR.filter(s=>!s.local||LOCAL_ONLY); }
+function tourSteps(){ return TR&&TR.list?TR.list:TOUR.filter(s=>!s.local||LOCAL_ONLY); }
 function tourShow(){
   if(!TR) return; const L=tourSteps(), st=L[TR.i]; if(!st){ tourEnd(); return; }
   if(st.tab&&ui.tab!==st.tab){ ui.tab=st.tab; render(); window.scrollTo(0,0); }
