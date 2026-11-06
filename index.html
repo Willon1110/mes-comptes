@@ -392,6 +392,7 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 #tour .tbub p{margin:0;font-size:14px;line-height:1.45}
 #tour .tact{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
 .obhero{text-align:center;margin:6px 0 14px}.obhero .logo{margin:0 auto 10px;width:64px;height:64px;font-size:28px}.obhero p{margin:0;font-size:15px;line-height:1.5}
+.obw .l,.obw .m{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
 .obi{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;flex:none}
 .obacc{margin-bottom:10px;border-left:5px solid var(--c)}.obacc:not(.on){opacity:.65}
 .obtop{display:flex;gap:10px;align-items:center}.obtop input[type=checkbox]{width:22px;height:22px;flex:none;accent-color:var(--accent)}
@@ -947,7 +948,7 @@ function putCache(enc,pending){ try{ localStorage.setItem(CACHE_KEY,JSON.stringi
 function localSave(){}
 function setSync(s){
   if(["cloud","offline","loading","local"].includes(s)) mode=s;
-  const map={local:["ok","Enregistré sur ce téléphone"],loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
+  const map={local:["ok","Enregistré sur cet appareil"],loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
   const [c,l]=map[s]||map.offline; const d=document.getElementById("syncdot"), t=document.getElementById("synctxt"); if(d) d.className="dot "+c; if(t) t.textContent=l;
 }
 function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts","recent","display"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
@@ -1044,8 +1045,8 @@ function renderGate(){
 }
 const FR_ERR=m=>{ m=String(m||""); if(/Invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect."; if(/Email not confirmed/i.test(m)) return "Ton e-mail n'est pas confirmé. Dans Supabase, coche « Auto Confirm User » ou confirme l'utilisateur."; if(/Invalid TOTP|invalid.*code|expired/i.test(m)) return "Code incorrect ou expiré."; if(/rate limit/i.test(m)) return "Trop de tentatives. Patiente quelques minutes."; if(isNetErr(m)) return "Pas de connexion internet."; if(/JWT|Invalid API key|apikey/i.test(m)) return "Clé publique ou URL incorrecte (Réglages de connexion)."; return m||"Erreur inconnue."; };
 async function boot(){
-  if(!window.isSecureContext||!window.crypto||!crypto.subtle){ gate("error","Cette page doit être ouverte en https (GitHub Pages) pour pouvoir chiffrer tes données."); return; }
   if(LOCAL_ONLY){ bootLocal(); return; }
+  if(!window.isSecureContext||!window.crypto||!crypto.subtle){ gate("error","Cette page doit être ouverte en https (GitHub Pages) pour pouvoir chiffrer tes données."); return; }
   const conf=getConf(); if(!conf){ gate("setup"); return; }
   if(!window.supabase||!window.supabase.createClient){ const ok=await loadSupabaseLib(); if(!ok){ gate("nolib"); return; } }
   try{ sb=window.supabase.createClient(conf.url,conf.anon,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"mc-auth",detectSessionInUrl:false}}); }
@@ -2264,7 +2265,7 @@ function sheetAccEdit(s){
 function sheetSecurity(){
   let h=sheetHead(LOCAL_ONLY?"Sécurité et sauvegarde":"Connexion, sécurité et sauvegarde");
   const bio=!!localStorage.getItem(BIO_KEY);
-  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Où sont tes données ?</h2></div><div class="card pad"><p style="margin:0 0 8px">Uniquement dans le navigateur de ce téléphone : rien n'est envoyé sur internet.</p><p class="note" style="margin:0">Si tu effaces les données du navigateur, changes ou perds ton téléphone, elles disparaissent. Télécharge régulièrement une sauvegarde ci-dessous et garde-la dans tes fichiers (iCloud Drive, Google Drive…). Pour passer sur un autre téléphone : ouvre l'appli dessus et choisis « J'ai déjà une sauvegarde ».</p></div></section>`;
+  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Où sont tes données ?</h2></div><div class="card pad"><p style="margin:0 0 8px">Uniquement dans le navigateur de cet appareil : rien n'est envoyé sur internet.</p><p class="note" style="margin:0">Si tu effaces les données du navigateur, changes ou perds ton appareil, elles disparaissent. Télécharge régulièrement une sauvegarde ci-dessous et garde-la dans tes fichiers (iCloud Drive, Google Drive…). Pour passer sur un autre appareil : ouvre l'appli dessus et choisis « J'ai déjà une sauvegarde ».</p></div></section>`;
   else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion</h2></div><div class="card list">
     <div class="row"><div class="main"><div class="l">${esc(S.email||"Compte")}</div><div class="m">Données chiffrées de bout en bout · ${mode==="cloud"?"synchronisées":"hors ligne"}</div></div><button class="btn sm" data-act="gLogout">Déconnexion</button></div>
     <button class="row" data-act="openMfa"><div class="main"><div class="l">Double authentification</div><div class="m">Code à 6 chiffres en plus du mot de passe</div></div>${I.right.replace('<svg','<svg width="16" height="16" style="color:var(--muted);flex:none"')}</button>
@@ -2285,7 +2286,7 @@ function sheetSecurity(){
     <label class="btn" for="fileIn" style="cursor:pointer">Restaurer depuis un fichier .json</label>
     <input type="file" id="fileIn" accept=".json,application/json,text/plain" style="display:none"></div></div></section>`;
   const conf=getConf();
-  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Repartir de zéro</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">Efface toutes les données de ce téléphone et relance l'assistant de départ. Télécharge une sauvegarde avant !</p><button class="btn danger block" data-act="wipeLocal">Effacer toutes les données</button></div></section>`;
+  if(LOCAL_ONLY) h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Repartir de zéro</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">Efface toutes les données de cet appareil et relance l'assistant de départ. Télécharge une sauvegarde avant !</p><button class="btn danger block" data-act="wipeLocal">Effacer toutes les données</button></div></section>`;
   else h+=`<section class="block" style="margin-top:16px"><div class="bh"><h2>Connexion Supabase</h2></div><div class="card pad"><p class="note" style="margin:0 0 10px">${esc(conf?conf.url:"")}</p><button class="btn block" data-act="gChangeBase">Changer de base Supabase</button></div></section>`;
   return h;
 }
@@ -2606,7 +2607,7 @@ document.addEventListener("click",async e=>{
     case "openRecent": pushOrOpen({type:"recent",n:10}); break;
     case "recentMore": s.n=(s.n||10)+10; renderSheet(); break;
     case "recentDel": { const f=findTx(a.dataset.id); if(!f) break; const t=JSON.parse(JSON.stringify(f.t)); const docs=new Set(); removeTx(t.id,docs); changed([...docs]); toast("Opération effacée",()=>{ const d2=new Set(); upsertTx(t,d2); changed([...d2]); }); break; }
-    case "wipeLocal": askConfirm("Tout effacer ?","Toutes tes données de ce téléphone seront supprimées définitivement. As-tu téléchargé une sauvegarde ?","Tout effacer",()=>{ try{ localStorage.removeItem(LOCAL_KEY); localStorage.removeItem(BIO_KEY); }catch(e){} location.reload(); }); break;
+    case "wipeLocal": askConfirm("Tout effacer ?","Toutes tes données de cet appareil seront supprimées définitivement. As-tu téléchargé une sauvegarde ?","Tout effacer",()=>{ try{ localStorage.removeItem(LOCAL_KEY); localStorage.removeItem(BIO_KEY); }catch(e){} location.reload(); }); break;
     case "obNext": { const e=obValidate(s.d); if(e){ s.err=e; renderSheet(); break; } s.err=""; s.d.step++; renderSheet(); document.getElementById("sheet").scrollTop=0; break; }
     case "obBack": s.err=""; s.d.step=Math.max(0,s.d.step-1); renderSheet(); break;
     case "obAdd": { const l=a.dataset.l; if(l==="others") s.d.others.push(""); else if(l==="incomes") s.d.incomes.push({label:"",amount:"",acc:(s.d.accs.find(x=>x.on)||{}).id,day:"1"}); renderSheet(); break; }
@@ -2700,7 +2701,7 @@ document.addEventListener("click",async e=>{
     case "lkBack": renderLock(); break;
     case "pk": pinKey(s,a.dataset.v); break;
     case "pinLen": s.len=+a.dataset.v; s.buf=""; renderSheet(); break;
-    case "pinSet": openSheet({type:"pin",purpose:"set",stage:"new",len:4,buf:""}); break;
+    case "pinSet": if(!(window.crypto&&crypto.subtle)){ toast("Le code n'est pas disponible quand l'appli est ouverte comme fichier."); break; } openSheet({type:"pin",purpose:"set",stage:"new",len:4,buf:""}); break;
     case "pinChange": openSheet({type:"pin",purpose:"change",stage:"current",len:cfg.pin.len,buf:""}); break;
     case "pinOff": openSheet({type:"pin",purpose:"off",stage:"current",len:cfg.pin.len,buf:""}); break;
     case "pinLock": lockNow(); break;
@@ -3090,10 +3091,10 @@ function sheetOnboard(s){
   let h=`<div class="grab"></div><div class="sh">${st>0?`<button class="iconbtn" data-act="obBack" aria-label="Retour">${I.left}</button>`:""}<h3>${["Bienvenue","Toi et ton foyer","Tes comptes","Tes revenus","Tes dépenses fixes","Tout est prêt"][st]}<small>Étape ${st+1} sur ${N}</small></h3></div><div class="steps">${[...Array(N)].map((_,i)=>`<i class="${i<=st?"on":""}"></i>`).join("")}</div>`;
   if(st===0){
     h+=`<div class="obhero"><div class="logo" aria-hidden="true">mc</div><p><b>Mes Comptes</b> t'aide à savoir chaque mois si tu finis dans le positif : ce qui est prévu, ce qui est passé, et ce qu'il reste.</p></div>
-    <div class="card list">
-      <div class="row"><span class="obi">1</span><div class="main"><div class="l">Tes données restent sur ce téléphone</div><div class="m">Rien n'est envoyé sur internet, personne d'autre ne les voit.</div></div></div>
-      <div class="row"><span class="obi">2</span><div class="main"><div class="l">Ajoute l'appli à ton écran d'accueil</div><div class="m">iPhone : bouton Partager › « Sur l'écran d'accueil ». Android : menu ⋮ › « Ajouter à l'écran d'accueil ». Ouvre-la toujours depuis cette icône.</div></div></div>
-      <div class="row"><span class="obi">3</span><div class="main"><div class="l">Fais une sauvegarde de temps en temps</div><div class="m">Réglages › Sauvegarde : un fichier à garder dans tes documents. C'est ta seule copie si tu changes de téléphone.</div></div></div>
+    <div class="card list obw">
+      <div class="row"><span class="obi">1</span><div class="main"><div class="l">Tes données restent sur cet appareil</div><div class="m">Rien n'est envoyé sur internet, personne d'autre ne les voit.</div></div></div>
+      ${location.protocol==="file:"?`<div class="row"><span class="obi">2</span><div class="main"><div class="l">Garde ce fichier au même endroit</div><div class="m">Ouvre-le toujours depuis le même dossier et avec le même navigateur : tes données sont liées à ce fichier et à ce navigateur. Ne le renomme pas et ne le déplace pas.</div></div></div>`:`<div class="row"><span class="obi">2</span><div class="main"><div class="l">Ajoute l'appli à ton écran d'accueil</div><div class="m">iPhone : bouton Partager › « Sur l'écran d'accueil ». Android : menu ⋮ › « Ajouter à l'écran d'accueil ». Ouvre-la toujours depuis cette icône.</div></div></div>`}
+      <div class="row"><span class="obi">3</span><div class="main"><div class="l">Fais une sauvegarde de temps en temps</div><div class="m">Réglages › Sécurité et sauvegarde : un fichier à garder dans tes documents. C'est ta seule copie si tu changes d'appareil.</div></div></div>
     </div>
     <div class="actions"><button class="btn primary block" data-act="obNext">Commencer</button><label class="btn block" for="obFile" style="cursor:pointer">J'ai déjà une sauvegarde (.json)</label><input type="file" id="obFile" accept=".json,application/json,text/plain" style="display:none"></div>`;
   } else if(st===1){
@@ -3158,7 +3159,7 @@ const TOUR=[
   {tab:"reglages",sel:'[data-act="openPlans"]',t:"Événements prévus",x:"Salaire, prélèvements, budgets, virements : tout ce qui revient se règle ici, rangé par type, avec une loupe pour chercher. Le gros bouton du dessus en crée un nouveau, pas à pas."},
   {tab:"reglages",sel:'[data-act="openCats"]',t:"Catégories",x:"Chaque catégorie est marquée fixe, variable ou les deux : seules les bonnes te sont proposées quand tu saisis. Tu peux aussi les réordonner et les fusionner."},
   {tab:"reglages",sel:'[data-act="openDisplay"]',t:"Affichage",x:"Thème, arrière-plan et présentation des onglets Comptes et Année : personnalise l'appli à ton goût."},
-  {tab:"reglages",sel:'[data-act="openSecurity"]',local:true,t:"Pense à sauvegarder",x:"Tes données sont seulement sur ce téléphone. Télécharge une sauvegarde de temps en temps et garde-la dans tes fichiers."},
+  {tab:"reglages",sel:'[data-act="openSecurity"]',local:true,t:"Pense à sauvegarder",x:"Tes données sont seulement sur cet appareil. Télécharge une sauvegarde de temps en temps et garde-la dans tes fichiers."},
   {tab:"reglages",sel:'[data-act="startTour"]',t:"À toi de jouer !",x:"Tu peux revoir cette visite à tout moment ici. Bonne gestion !"}];
 let TR=null;
 function startTour(){ closeSheet(); if(FAN) closeFan(); const keep=ui.tab, list=[];
