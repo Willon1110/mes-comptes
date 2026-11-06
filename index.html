@@ -2496,7 +2496,7 @@ document.addEventListener("click",async e=>{
     case "back": popSheet(); break;
     case "fab": if(loading()) break; if(FAN) closeFan(); else openFan(); break;
     case "fanClose": closeFan(); break;
-    case "fanPick": { const k=a.dataset.v; closeFan(); setTimeout(()=>openSheet({type:"wizard",d:newWizard("tx",k)}),120); break; }
+    case "fanPick": { const k=a.dataset.v; openSheet({type:"wizard",d:newWizard("tx",k)}); closeFan(); break; }
     case "newPlan": if(loading()) break; pushOrOpen({type:"wizard",d:newWizard("plan")}); break;
     case "newPlanIncome": pushSheet({type:"wizard",d:newWizard("plan","income")}); break;
     case "otherIncome": pushSheet({type:"wizard",d:newWizard("tx","income")}); break;
