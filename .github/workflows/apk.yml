@@ -14,7 +14,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - name: SDK Android déjà présent sur la machine
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties && ls $ANDROID_HOME/platforms
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
