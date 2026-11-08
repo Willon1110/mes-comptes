@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'ch.mescomptes.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'ch.mescomptes.app'
+        minSdk 24
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv("VERSION_CODE") ?: "1")
+        versionName "1.0." + (System.getenv("VERSION_CODE") ?: "1")
+    }
+    signingConfigs {
+        release {
+            storeFile rootProject.file('signing/release.jks')
+            storePassword 'UEAo4LRrg5SapiNUcUK8t5NC'
+            keyAlias 'mescomptes'
+            keyPassword 'UEAo4LRrg5SapiNUcUK8t5NC'
+        }
+    }
+    buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
