@@ -609,7 +609,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.4 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.5 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
@@ -635,7 +635,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.4";
+const VERSION = "4.5";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -1181,7 +1181,7 @@ async function bioUnlock(silent){
   try{ await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:"public-key",id:unb64(id)}],userVerification:"required",timeout:60000}}); locked=false; unlocked=true; lockTries=0; lastActive=Date.now(); renderLock(); }
   catch(e){ if(!silent){ lockMsg="Empreinte non reconnue, utilise ton code"; renderLock(); } }
 }
-function download(name,text,type){ const b=new Blob([text],{type}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }
+function download(name,text,type){ if(window.AndroidBridge&&AndroidBridge.saveFile){ try{ AndroidBridge.saveFile(name,type||"",String(text)); return; }catch(e){} } const b=new Blob([text],{type}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); }
 
 /* ---------- icônes ---------- */
 const sv=(d,w=1.9)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -3188,6 +3188,17 @@ document.addEventListener("click",e=>{
 setInterval(()=>{ if(TR&&TR.waiting&&!stack.length&&!FAN){ TR.waiting=false; TR.i++; tourShow(); } },500);
 addEventListener("resize",()=>{ if(TR&&!TR.waiting) tourShow(); });
 
+/* ---------- bouton retour Android ---------- */
+window.__appBack=function(){
+  if(typeof TR!=="undefined"&&TR){ tourEnd(); return true; }
+  if(FAN){ closeFan(); return true; }
+  const calc=document.getElementById("calc"), cal=document.getElementById("cal");
+  if(calc&&calc.classList.contains("on")){ calcKey("cancel"); return true; }
+  if(cal&&cal.classList.contains("on")){ calKey("cancel"); return true; }
+  if(stack.length){ if(topS().type==="onboard") return true; if(stack.length>1) popSheet(); else closeSheet(); return true; }
+  if(ui.tab!=="mois"){ ui.tab="mois"; render(); window.scrollTo(0,0); return true; }
+  return false;
+};
 /* ---------- fermer en glissant vers le bas ---------- */
 let SW=null;
 function swipeClose(){ const s=topS(); if(s&&s.type==="wizard"&&typeof wizSteps==="function"){ const st=wizSteps(s.d), i=st.indexOf(s.d.step); if(i>0&&!(s.d.id&&s.d.step==="recap")){ s.d.step=st[i-1]; s.err=""; renderSheet(); return; } } closeSheet(); }
