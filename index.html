@@ -633,7 +633,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.8 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.9 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn calbtn" data-act="openCalendar" aria-label="Calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/></svg></button>
@@ -660,7 +660,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.8";
+const VERSION = "4.9";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -1028,7 +1028,7 @@ let G={view:"loading",err:"",busy:false,f:{email:"covoit.will@example.com"}};
 function gate(view,err){ G.view=view; G.err=err||""; G.busy=false; renderGate(); }
 function hideGate(){ G.view=null; renderGate(); }
 const gf=(name,type,ph,extra="")=>`<input id="g-${name}" data-g="${name}" type="${type}" placeholder="${ph}" value="${esc(G.f[name]||"")}" ${extra}>`;
-function renderGate(){
+function renderGate(){ try{ window.AndroidBridge&&AndroidBridge.ready&&AndroidBridge.ready(); }catch(e){}
   const el=document.getElementById("gate");
   if(!G.view){ el.classList.remove("on"); el.innerHTML=""; return; }
   const conf=getConf();
