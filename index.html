@@ -633,7 +633,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.9 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.0 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn calbtn" data-act="openCalendar" aria-label="Calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/></svg></button>
@@ -660,7 +660,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.9";
+const VERSION = "5.0";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -2123,6 +2123,13 @@ function sheetCatDetail(s){
   const A=txs.reduce((x,t)=>x+conv(t.amount,curOf(t.acc),c.rA),0);
   let h=sheetHead(esc(s.cat),`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
   h+=`<div class="sumgrid"><div><span>Dépensé</span><b>${fmt(A,"EUR")}</b></div><div><span>Budget</span><b>${fmt(P,"EUR")}</b></div><div><span>Reste</span><b class="${P-A<0?"neg":""}">${fmt(P-A,"EUR")}</b></div><div><span>Opérations</span><b>${txs.length}</b></div></div>`;
+  { const tab=isSpecialCat(catByName(s.cat))?"special":"variable", pr=prevRows(s.ym,tab).filter(r=>r.cat===s.cat);
+    if(!s.d){ s.d={scope:"month"}; s.init={}; }
+    pr.forEach(r=>{ const k="e:"+r.key; if(!(k in s.init)){ s.d[k]=r.est!=null?numStr(r.est):""; s.init[k]=s.d[k]; } });
+    h+=`<h4>Prévision de ce mois</h4>`;
+    if(pr.length){ h+=`<div class="card pad" style="padding-top:2px;padding-bottom:6px">${pr.map(r=>`<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(accName(r.acc))}</b><small>${r.skipped?"pas ce mois-ci":r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""}</small></div><div class="pcol">${r.skipped?`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">Rétablir</button>`:inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(accName(r.acc))}"`)}</div></div>`).join("")}
+      ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer la prévision</button></div>`; }
+    else h+=`<p class="note">Aucun budget prévu pour ${esc(s.cat)} ce mois-ci.</p>`; }
   const by={}; txs.forEach(t=>{ const sub=subOf(t.cat,t.sub), s2=sub2Of(t.cat,t.sub,t.sub2); const k=sub?sub.name+(s2?" › "+s2.name:""):"Sans sous-catégorie"; by[k]=(by[k]||0)+conv(t.amount,curOf(t.acc),c.rA); });
   const ks=Object.keys(by).sort((a,b)=>by[b]-by[a]), mx=ks.length?by[ks[0]]:1;
   if(ks.length) h+=`<h4>Par sous-catégorie</h4><div class="card pad" style="padding-top:4px;padding-bottom:4px">${ks.map(k=>`<div class="catbar"><b style="font-weight:700">${esc(k)}</b><span>${fmt(by[k],"EUR")}</span><div class="bar"><i style="width:${(by[k]/mx*100).toFixed(1)}%;background:var(--title)"></i></div></div>`).join("")}</div>`;
@@ -2130,7 +2137,7 @@ function sheetCatDetail(s){
   const hm=Math.max(1,...hist.map(x=>Math.max(x[1],x[2])));
   h+=`<h4>Mois précédents</h4><div class="card pad" style="padding-top:4px;padding-bottom:4px">${hist.map(([m,a,p])=>`<div class="catbar"><b style="font-weight:700;text-transform:capitalize">${monthName(m,"short")}${m===s.ym?" (ce mois)":""}</b><span>${fmt(a,"EUR")} <span class="mut">/ ${fmt(p,"EUR")}</span></span><div class="bar"><i style="width:${(a/hm*100).toFixed(1)}%;background:${a>p&&p>0?"var(--neg)":"var(--title)"}"></i></div></div>`).join("")}</div>`;
   h+=`<h4>Opérations (${txs.length})</h4>${txs.length?`<div class="card list">${txs.map(t=>txRow(t)).join("")}</div>`:`<p class="note">Aucune opération ce mois-ci.</p>`}`;
-  h+=`<div class="actions"><button class="btn block" data-act="openPrev" data-tab="${isSpecialCat(catByName(s.cat))?"special":"variable"}">Ajuster la prévision de ce mois</button></div>`;
+  h+=`<div class="actions"><button class="btn block" data-act="openPrev" data-tab="${isSpecialCat(catByName(s.cat))?"special":"variable"}">Toutes les prévisions du mois</button></div>`;
   return h;
 }
 function sheetPeople(s){
@@ -2580,6 +2587,7 @@ document.addEventListener("click",async e=>{
     case "openPrev": if(loading()) break; openPrev(a.dataset.tab||"fixe"); break;
     case "openGauges": pushOrOpen({type:"gauges",ym:ui.ym}); break;
     case "prevSave": prevSave(s); break;
+    case "catPrevSave": prevSave(s,true); break;
     case "prevSkip": { cfg.skips=cfg.skips||{}; const k=a.dataset.key+"@"+s.ym; if(cfg.skips[k]) delete cfg.skips[k]; else cfg.skips[k]=true; changed(["config"]); renderSheet(); break; }
     case "prevDel": { const m=(cfg.varEst||{})[s.ym]; if(m){ delete m[a.dataset.key]; if(!Object.keys(m).length) delete cfg.varEst[s.ym]; } delete s.d["e:"+a.dataset.key]; changed(["config"]); renderSheet(); break; }
     case "prevAdd": { const d=s.d, v=num(d.nAmt);
@@ -3116,10 +3124,10 @@ function prevRows(ym,tab){
   allPlans().filter(p=>(tab==="transfer"?p.kind==="transfer":p.kind==="expense"&&(p.nature||"fixe")===tab)&&occurrences(p,ym).length).forEach(p=>{
     const occ=c.occ.filter(o=>o.p.id===p.id), sk=c.skipped.some(o=>o.p.id===p.id);
     const planned=occ.reduce((x,o)=>x+(o.amount!=null?o.amount:p.amount),0), base=occurrences(p,ym).length*(+p.amount||0);
-    const tr=p.kind==="transfer"; rows.push({key:p.id,label:occurrences(p,ym)[0].label||p.label,acc:tr?p.from:p.acc,to:tr?p.to:null,cur:curOf(tr?p.from:p.acc),planned,base,est:est[p.id],skipped:sk,virtual:!!p.virtual,date:p.noDate?"":occurrences(p,ym)[0].date});
+    const tr=p.kind==="transfer"; rows.push({cat:p.cat,key:p.id,label:occurrences(p,ym)[0].label||p.label,acc:tr?p.from:p.acc,to:tr?p.to:null,cur:curOf(tr?p.from:p.acc),planned,base,est:est[p.id],skipped:sk,virtual:!!p.virtual,date:p.noDate?"":occurrences(p,ym)[0].date});
   });
   if(tab==="variable"||tab==="special") Object.keys(est).filter(k=>k.startsWith("c:")).forEach(k=>{ const [cat,acc]=k.slice(2).split("|"); if(!accById(acc)) return; if(isSpecialCat(catByName(cat))!==(tab==="special")) return;
-    rows.push({key:k,label:cat,acc,cur:curOf(acc),planned:+est[k],base:null,est:est[k],skipped:false,monthOnly:true}); });
+    rows.push({cat,key:k,label:cat,acc,cur:curOf(acc),planned:+est[k],base:null,est:est[k],skipped:false,monthOnly:true}); });
   return rows;
 }
 function openPrev(tab){
@@ -3148,7 +3156,7 @@ function sheetPrev(s){
   if(tab==="variable") h+=`<p class="note">Un budget réparti sur plusieurs comptes se règle dans <button class="lnk" style="display:inline;padding:0" data-act="openEst">les budgets des dépenses variables</button>.</p>`;
   return h;
 }
-function prevSave(s){
+function prevSave(s,stay){
   const d=s.d, ym=s.ym, init=s.init||{}, keys=Object.keys(d).filter(k=>k.startsWith("e:")&&String(d[k]??"").trim()!==String(init[k]??"").trim()).map(k=>k.slice(2));
   for(const k of keys){ const v=String(d["e:"+k]||"").trim(); if(v&&!(num(v)>=0)){ s.err="Un montant n'est pas valide."; return renderSheet(); } }
   cfg.varEst=cfg.varEst||{}; const m=Object.assign({},cfg.varEst[ym]||{}); let changedPlans=0;
@@ -3156,7 +3164,9 @@ function prevSave(s){
     if(d.scope==="all"&&pl&&v!==""){ const nv=r2(num(v)); if(nv!==+pl.amount){ pl.amount=nv; changedPlans++; } delete m[k]; return; }
     if(v==="") delete m[k]; else m[k]=r2(num(v)); });
   if(Object.keys(m).length) cfg.varEst[ym]=m; else delete cfg.varEst[ym];
-  popSheet(); changed(["config"]); if(stack.length) renderSheet(); toast(changedPlans?`Prévisions enregistrées · ${changedPlans} montant${changedPlans>1?"s":""} habituel${changedPlans>1?"s":""} changé${changedPlans>1?"s":""}`:"Prévisions enregistrées");
+  if(stay){ s.init={}; Object.keys(d).filter(k=>k.startsWith("e:")).forEach(k=>{ s.init[k]=d[k]; }); s.err=""; changed(["config"]); renderSheet(); }
+  else { popSheet(); changed(["config"]); if(stack.length) renderSheet(); }
+  toast(changedPlans?`Prévisions enregistrées · ${changedPlans} montant${changedPlans>1?"s":""} habituel${changedPlans>1?"s":""} changé${changedPlans>1?"s":""}`:"Prévisions enregistrées");
 }
 function sheetGauges(s){
   const c=calcMonth(s.ym), cats={};
