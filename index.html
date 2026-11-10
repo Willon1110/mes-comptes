@@ -462,6 +462,21 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 [data-theme="lagon"] .acc.grand .v{color:#FFD27A!important}
 [data-theme="lagon"] .seg button.on{background:rgba(255,255,255,.22);color:#fff}
 [data-theme="lagon"] .calc-keys button{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+.calbtn{margin-right:-4px}
+.top-in .alertbtn,.top-in .histbtn{width:38px;height:38px;border-radius:12px}
+.top-in{gap:8px}
+.top-in .ver{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.top-in>div[style*="flex:1"]{min-width:0}
+.bigcal+.legend{flex-wrap:wrap;row-gap:4px}
+.bigcal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.bigcal .wd{text-align:center;font-size:11px;font-weight:800;color:var(--muted);padding:4px 0}
+.bigcal .cd{aspect-ratio:1/1.05;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 2px 5px;font-weight:700;color:var(--ink)}
+.bigcal .cd.today{border:2px solid var(--title)}
+.bigcal .cd.sel{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.bigcal .dots{display:flex;gap:3px;min-height:7px}.bigcal .dots i{width:6px;height:6px;border-radius:50%}
+.dt-income{background:var(--pos)!important}.dt-expense{background:var(--accent)!important}.dt-transfer{background:var(--title)!important}.dt-tx{background:var(--muted)!important}.dt-bday{background:var(--neg)!important}.dt-zero{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--accent)}
+.bigcal .cd.sel .dots i{box-shadow:0 0 0 1.5px var(--on-accent)}
+.nrow{margin-bottom:10px}.nhead{display:flex;align-items:center;justify-content:space-between;gap:12px}.nhead b{display:block;font-size:15px}.nhead small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
 .plq{display:flex;gap:8px;align-items:center;margin:0 0 10px}.plq input{flex:1}
 .hidden-q{display:none!important}
 .alertbtn{position:relative;width:42px;height:42px;border-radius:13px;border:1.5px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 18%,transparent);color:var(--ochre);display:grid;place-items:center;padding:0;flex:none}
@@ -618,9 +633,10 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v4.7 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v4.8 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
+  <button class="histbtn calbtn" data-act="openCalendar" aria-label="Calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/></svg></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
 </div></header>
 
@@ -644,7 +660,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "4.7";
+const VERSION = "4.8";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -838,7 +854,7 @@ function calcMonth(ym){
   const occKeys=new Set(occ.map(o=>o.key));
   const pointRows=occ.filter(o=>!isVarExp(o.p)).map(o=>{
     const ts=linked[o.key]||[]; const actual=ts.reduce((s,t)=>s+(t.kind==="transfer"?t.amtFrom:t.amount),0);
-    return {o,ts,planned:o.amount!=null?o.amount:o.p.amount,actual,cur:curOf(o.p.kind==="transfer"?o.p.from:o.p.acc),done:ts.length>0,late:!ts.length&&(o.p.noDate?lastDay(ym)<TODAY:o.date<TODAY)};
+    return {o,ts,planned:o.amount!=null?o.amount:o.p.amount,actual,cur:curOf(o.p.kind==="transfer"?o.p.from:o.p.acc),done:ts.length>0,late:!ts.length&&+(o.amount!=null?o.amount:o.p.amount)>0&&(o.p.noDate?lastDay(ym)<TODAY:o.date<TODAY)};
   });
   const vmap={}; const vget=(cat,acc)=>{ const k=cat+"|"+acc; return vmap[k]=vmap[k]||{key:k,cat,acc,planned:0,actual:0,tx:[],labels:[],bulk:null}; };
   occ.filter(o=>isVarExp(o.p)).forEach(o=>{ const v=vget(o.p.cat,o.p.acc); v.planned+=(o.amount!=null?o.amount:o.p.amount); v.labels.push(o.label); });
@@ -960,7 +976,7 @@ function setSync(s){
   const map={local:["ok","Enregistré sur cet appareil"],loading:["","Chargement…"],cloud:["ok","Synchronisé · chiffré"],saving:["ok","Enregistrement…"],offline:["warn","Hors ligne · sera envoyé"],err:["err","Échec de l'enregistrement"]};
   const [c,l]=map[s]||map.offline; const d=document.getElementById("syncdot"), t=document.getElementById("synctxt"); if(d) d.className="dot "+c; if(t) t.textContent=l;
 }
-function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts","recent","display","gauges"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
+function changed(){ memo.clear(); render(); if(stack.length&&["fixed","transfers","varList","catDetail","people","person","journal","incomes","expenses","account","alerts","recent","display","gauges","calendar"].includes(topS().type)) setTimeout(renderSheet,0); scheduleSave(); }
 function scheduleSave(){ S.dirty=true; clearTimeout(saveT); saveT=setTimeout(doSave,700); }
 const isNetErr=e=>!navigator.onLine||/fetch|network|Failed to fetch|Load failed|NetworkError/i.test(String(e&&(e.message||e)));
 async function doSave(){
@@ -998,7 +1014,7 @@ function migrateData(){
   if(cfg.skips){ for(const k of Object.keys(cfg.skips)){ const m=k.match(/^(.*)@(\d{4}-\d{2})-\d{2}$/); if(m){ cfg.skips[m[1]+"@"+m[2]]=true; delete cfg.skips[k]; ch=true; } } }
   return ch;
 }
-function applyData(obj){ cfg=normCfg(obj&&obj.cfg); TX=(obj&&obj.TX)||{}; syncPersons(); applyLook(); memo.clear(); render(); }
+function applyData(obj){ cfg=normCfg(obj&&obj.cfg); TX=(obj&&obj.TX)||{}; syncPersons(); applyLook(); memo.clear(); render(); setTimeout(()=>{ pushNotifs(); const today=new Date(); for(const ym in TX){ if(TX[ym].some(t=>t.ts&&new Date(t.ts).toDateString()===today.toDateString())){ markEnteredToday(); break; } } },0); }
 async function refreshFromRemote(){
   if(!sb||!S.key||S.dirty||S.saving) return;
   try{ const row=await fetchVault(); if(row&&row.version>S.version){ if(row.salt!==S.salt){ await lockKeyAway(); return; } const obj=await decryptData(S.key,row.iv,row.data); applyData(obj); S.version=row.version; putCache({iv:row.iv,data:row.data},false); } setSync("cloud"); }
@@ -1724,6 +1740,7 @@ function viewSettings(){
     <button class="card navcard" data-act="openMembers"><span class="ic">${I.people}</span><div class="main"><b>Personnes</b><small>${members().length?esc(members().map(m=>m.name).join(", ")):"personne pour l'instant"}</small></div>${I.right}</button>
 
     <button class="card navcard" data-act="openSecurity"><span class="ic">${I.lock}</span><div class="main"><b>${LOCAL_ONLY?"Sécurité et sauvegarde":"Connexion, sécurité et sauvegarde"}</b><small>${LOCAL_ONLY?"Fichiers de sauvegarde, code, empreinte":"Connexion, double authentification, code, empreinte, fichiers de sauvegarde"}</small></div>${I.right}</button>
+    <button class="card navcard" data-act="openNotif"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></span><div class="main"><b>Notifications</b><small>${hasNotif()?(()=>{ const n=notifCfg(), on=[n.month.on?"prépare ton mois":"",n.daily.on?"rappel quotidien":""].filter(Boolean); return on.length?on.join(" · "):"aucune activée"; })():"dans l'appli Android"}</small></div>${I.right}</button>
     <button class="card navcard" data-act="openDisplay"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M12 3.5a8.5 8.5 0 0 0 0 17"/></svg></span><div class="main"><b>Affichage</b><small>Thème, arrière-plan, onglets Comptes et Année</small></div>${I.right}</button>
     <button class="card navcard" data-act="startTour"><span class="ic">${I.spark}</span><div class="main"><b>Visite guidée</b><small>Découvrir l'appli écran par écran</small></div>${I.right}</button>
   </div>`;
@@ -1740,7 +1757,7 @@ function closeSheet(){ stack=[]; document.getElementById("sheet").classList.remo
 function sheetHead(title,sub,extra){ return `<div class="grab"></div><div class="sh">${stack.length>1?`<button class="iconbtn" data-act="back" aria-label="Retour">${I.left}</button>`:""}<h3>${title}${sub?`<small>${sub}</small>`:""}</h3>${extra||""}<button class="iconbtn" data-act="close" aria-label="Fermer">${I.close}</button></div>`; }
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
-  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,prev:sheetPrev,gauges:sheetGauges,display:sheetDisplay,look:sheetLook,accLook:sheetAccLook,recent:sheetRecent,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
+  const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,calendar:sheetCalendar,notif:sheetNotif,prev:sheetPrev,gauges:sheetGauges,display:sheetDisplay,look:sheetLook,accLook:sheetAccLook,recent:sheetRecent,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
   el.innerHTML=f(s); if(s.type==="plans"&&s.search&&s.q) filterPlans(s.q); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
@@ -1787,7 +1804,8 @@ function validateDraft(d){
   } else {
     if(d.kind==="expense"&&!d.nature) return "Choisis fixe ou variable.";
     if(!d.cat) return "Choisis une catégorie.";
-    if(!(num(d.amount)>0)) return "Indique un montant supérieur à 0.";
+    if(d.mode==="plan"){ const a=String(d.amount??"").trim()===""?0:num(d.amount); if(!(a>=0)) return "Indique un montant (0 si c'est un simple rappel)."; }
+    else if(!(num(d.amount)>0)) return "Indique un montant supérieur à 0.";
     if(!accById(d.acc)) return "Choisis un compte.";
   }
   if(!isISO(d.date)) return "Choisis une date.";
@@ -1899,6 +1917,7 @@ function planToDraft(p){
 function findTx(id){ for(const ym in TX){ const i=TX[ym].findIndex(t=>t.id===id); if(i>=0) return {ym,i,t:TX[ym][i]}; } return null; }
 function removeTx(id,docs){ const f=findTx(id); if(f){ TX[f.ym].splice(f.i,1); docs.add("tx-"+f.ym); } }
 function upsertTx(t,docs){ const isNew=!findTx(t.id); t.ts=Date.now(); if(personsOf(t).includes("famille")&&!Array.isArray(t.fam)) t.fam=TRIO.slice();
+  if(isNew) markEnteredToday();
   if(isNew&&t.link){ ui.justDone={key:t.link,until:Date.now()+1600}; try{ navigator.vibrate&&navigator.vibrate(18); }catch(e){} }
   removeTx(t.id,docs); const ym=t.date.slice(0,7); (TX[ym]=TX[ym]||[]).push(t); docs.add("tx-"+ym); }
 function wzSave(s){
@@ -1907,7 +1926,7 @@ function wzSave(s){
     const nd=d.kind==="expense"&&!!d.noDate;
     const p={id:d.id||uid8(),kind:d.kind,freq:nd&&["weekly","biweekly"].includes(d.freq)?"monthly":d.freq,date:nd?d.date.slice(0,7)+"-01":d.date,end:d.freq==="once"?"":(d.end||""),noDate:nd||undefined};
     if(d.kind==="transfer"){ Object.assign(p,{from:d.from,to:d.to,amount:r2(num(d.amtFrom)),nature:"fixe",persons:[],label:(d.label||"").trim()||`${accName(d.from)} → ${accName(d.to)}`}); }
-    else Object.assign(p,{acc:d.acc,cat:d.cat,sub:d.sub||"",sub2:d.sub2||"",amount:r2(num(d.amount)),persons:(d.persons||[]).slice(),personOther:(d.persons||[]).includes("autre")?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub,d.sub2)}); delete p.person;
+    else Object.assign(p,{acc:d.acc,cat:d.cat,sub:d.sub||"",sub2:d.sub2||"",amount:r2(num(d.amount)||0),persons:(d.persons||[]).slice(),personOther:(d.persons||[]).includes("autre")?(d.personOther||"").trim():"",nature:d.kind==="income"?"fixe":d.nature,label:(d.label||"").trim()||catLabel(d.cat,d.sub,d.sub2)}); delete p.person;
     const i=cfg.plans.findIndex(x=>x.id===p.id); if(i>=0) cfg.plans[i]=p; else cfg.plans.push(p);
     closeSheet(); changed(["config"]); toast(d.id?"Événement modifié":"Événement créé");
   } else {
@@ -2621,6 +2640,14 @@ document.addEventListener("click",async e=>{
     case "addMember": { const n=String(s.d.nm||"").trim(); if(!n) break; const M=members().slice(); M.push({id:memberId(n),name:n}); setMembers(M); s.d.nm=""; renderSheet(); toast(n+" ajouté"); break; }
     case "delMember": { const M=members(), x=M.find(m=>m.id===a.dataset.id); if(!x) break; askConfirm(`Retirer ${x.name} ?`,"Les opérations déjà attribuées gardent leur montant, mais n'auront plus de nom de personne.","Retirer",()=>{ setMembers(members().filter(m=>m.id!==x.id)); popSheet(); renderSheet(); }); break; }
     case "startTour": startTour(); break;
+    case "openCalendar": pushOrOpen({type:"calendar",ym:ui.ym,sel:ui.ym===CUR_YM?TODAY:null}); break;
+    case "calNav": s.ym=addMonths(s.ym,+a.dataset.v); s.sel=s.ym===CUR_YM?TODAY:null; renderSheet(); break;
+    case "calDay": s.sel=a.dataset.v; renderSheet(); setTimeout(()=>{ const h4=document.querySelector("#sheet h4"); if(h4) h4.scrollIntoView({block:"start",behavior:"smooth"}); },30); break;
+    case "calAddPlan": { const d=newWizard("plan"); d.date=a.dataset.v; d.freq="once"; pushSheet({type:"wizard",d}); break; }
+    case "calAddTx": { const d=newWizard("tx"); d.date=a.dataset.v; pushSheet({type:"wizard",d}); break; }
+    case "openNotif": openSheet({type:"notif"}); break;
+    case "notifTog": { const n=notifCfg(), k=a.dataset.k; n[k].on=!n[k].on; cfg.notif=n; if(n[k].on&&window.AndroidBridge&&AndroidBridge.askPermission){ try{ AndroidBridge.askPermission(); }catch(e){} } pushNotifs(); changed(["config"]); renderSheet(); toast(n[k].on?"Notification activée":"Notification désactivée"); break; }
+    case "notifTest": { if(window.AndroidBridge&&AndroidBridge.testNotif){ try{ AndroidBridge.askPermission&&AndroidBridge.askPermission(); AndroidBridge.testNotif(); toast("Notification envoyée"); }catch(e){ toast("Impossible d'envoyer la notification"); } } break; }
     case "openDisplay": openSheet({type:"display"}); break;
     case "openLook": pushOrOpen({type:"look"}); break;
     case "openAccLook": pushOrOpen({type:"accLook"}); break;
@@ -2825,6 +2852,7 @@ function pushOrOpen(x){ stack.length?pushSheet(x):openSheet(x); }
 document.addEventListener("submit",e=>{ const f=e.target.dataset&&e.target.dataset.gform; if(f){ e.preventDefault(); gateSubmit(f); } });
 function obSet(path,val){ const s=topS(); if(!s||s.type!=="onboard") return; const k=path.split("."); let o=s.d; for(let i=0;i<k.length-1;i++) o=o[k[i]]; o[k[k.length-1]]=val; }
 document.addEventListener("input",e=>{ const t=e.target; if(t.dataset&&t.dataset.ob&&t.type!=="checkbox") obSet(t.dataset.ob,t.value); });
+document.addEventListener("change",e=>{ const t=e.target; if(!(t.dataset&&t.dataset.notif)) return; const m=/^(\d{1,2}):(\d{2})/.exec(t.value); if(!m) return; const n=notifCfg(); n[t.dataset.notif].h=+m[1]; n[t.dataset.notif].m=+m[2]; cfg.notif=n; pushNotifs(); changed(["config"]); toast("Heure enregistrée"); });
 document.addEventListener("change",e=>{ const t=e.target; if(t.dataset&&t.dataset.ob){ obSet(t.dataset.ob,t.type==="checkbox"?t.checked:t.value); if(t.type==="checkbox"||t.tagName==="SELECT") renderSheet(); }
   if(t.dataset&&t.dataset.mem){ const v=t.value.trim(), M=members().map(m=>m.id===t.dataset.mem?Object.assign({},m,{name:v||m.name}):m); setMembers(M); toast("Enregistré"); } });
 document.addEventListener("input",e=>{ if(e.target.id==="planq"){ const st=topS(); if(st) st.q=e.target.value; filterPlans(e.target.value); } });
@@ -3142,6 +3170,58 @@ function sheetGauges(s){
   h+=`<div class="actions"><button class="btn block" data-act="openPrev" data-tab="variable">Prévoir les dépenses variables</button></div>`;
   return h;
 }
+/* ---------- calendrier ---------- */
+function dayItems(ym){
+  const c=calcMonth(ym), map={}, add=(d,it)=>{ (map[d]=map[d]||[]).push(it); };
+  c.occ.forEach(o=>{ if(o.p.noDate||isVarExp(o.p)&&o.p.noDate) return; if(o.p.special==="birthday") return; const amt=o.amount!=null?o.amount:o.p.amount, k=o.p.kind;
+    const done=c.pointRows.some(r=>r.o.key===o.key&&r.done);
+    add(o.date,{t:"plan",kind:k,label:o.label,amt,cur:curOf(k==="transfer"?o.p.from:o.p.acc),done,key:o.key,id:o.p.id,zero:!(amt>0)}); });
+  c.tx.forEach(t=>add(t.date,{t:"tx",kind:t.kind,label:t.label||t.cat||"Opération",amt:t.kind==="transfer"?t.amtFrom:t.amount,cur:curOf(t.kind==="transfer"?t.from:t.acc),id:t.id,linked:!!t.link}));
+  specItems(c,ym).events.forEach(e=>add(e.date,{t:"bday",label:`Anniversaire ${e.name}${e.age!=null?` · ${e.age} ans`:""}`,amt:e.budget,cur:"EUR"}));
+  return map;
+}
+function sheetCalendar(s){
+  const ym=s.ym, [y,m]=ym.split("-").map(Number), first=new Date(Date.UTC(y,m-1,1)).getUTCDay(), off=(first+6)%7, dim=daysIn(y,m), map=dayItems(ym);
+  let h=sheetHead("Calendrier","Touche un jour pour voir ou ajouter un événement");
+  h+=`<div class="cal-head"><button class="iconbtn" data-act="calNav" data-v="-1" aria-label="Mois précédent">${I.left}</button><b>${monthName(ym)} ${y}</b><button class="iconbtn" data-act="calNav" data-v="1" aria-label="Mois suivant">${I.right}</button></div>`;
+  let cells=["L","M","M","J","V","S","D"].map(x=>`<div class="wd">${x}</div>`).join("");
+  for(let i=0;i<off;i++) cells+=`<div></div>`;
+  for(let d=1;d<=dim;d++){ const iso=`${ym}-${pad(d)}`, L=map[iso]||[];
+    const dots=[...new Set(L.map(it=>it.t==="bday"?"bday":it.t==="tx"?"tx":it.zero?"zero":it.kind))].slice(0,4).map(k=>`<i class="dt-${k}"></i>`).join("");
+    cells+=`<button type="button" class="cd ${iso===TODAY?"today":""} ${iso===s.sel?"sel":""}" data-act="calDay" data-v="${iso}" aria-label="${d} ${monthName(ym)}${L.length?", "+L.length+" élément"+(L.length>1?"s":""):""}"><span>${d}</span><span class="dots">${dots}</span></button>`; }
+  h+=`<div class="bigcal">${cells}</div>`;
+  h+=`<div class="legend" style="padding:6px 2px 0"><span><i style="background:var(--pos)"></i>revenu</span><span><i style="background:var(--accent)"></i>dépense</span><span><i style="background:var(--title)"></i>virement</span><span><i style="background:var(--muted)"></i>opération</span><span><i style="background:var(--neg)"></i>anniversaire</span><span><i style="background:transparent;border:1.5px solid var(--accent)"></i>sans montant</span></div>`;
+  const sel=s.sel&&s.sel.slice(0,7)===ym?s.sel:null;
+  if(sel){ const L=map[sel]||[];
+    h+=`<h4>${longDate(sel)}</h4>`;
+    h+=L.length?`<div class="card list">${L.map(it=>{ const sign=it.kind==="income"?"+":it.kind==="transfer"?"":"−";
+      const act=it.t==="tx"?`data-act="editTx" data-id="${it.id}"`:it.t==="plan"?`data-act="occAct" data-key="${esc(it.key)}"`:`data-act="openSpecList"`;
+      const sub=it.t==="tx"?"opération saisie":it.t==="bday"?"anniversaire":it.zero?"événement sans montant":it.done?"prévu · confirmé":"prévu";
+      return `<button class="row" ${act}><span class="cdot dt-${it.t==="bday"?"bday":it.t==="tx"?"tx":it.zero?"zero":it.kind}"></span><div class="main"><div class="l">${esc(it.label)}</div><div class="m">${sub}</div></div><div class="amt"><b>${it.zero||it.t==="bday"&&!(it.amt>0)?"":sign+fmt(it.amt,it.cur)}</b></div></button>`; }).join("")}</div>`:`<p class="note">Rien ce jour-là.</p>`;
+    h+=`<div class="grid2" style="margin-top:10px"><button class="btn primary" data-act="calAddPlan" data-v="${sel}">+ Événement</button><button class="btn" data-act="calAddTx" data-v="${sel}">+ Opération</button></div><p class="note">Un événement peut avoir un montant de 0 : il sert alors de simple rappel dans le calendrier.</p>`;
+  }
+  return h;
+}
+
+/* ---------- notifications (appli Android) ---------- */
+const hasNotif=()=>!!(window.AndroidBridge&&AndroidBridge.setNotifs);
+function notifCfg(){ const n=cfg.notif||{}; return {month:Object.assign({on:false,h:18,m:0},n.month||{}),daily:Object.assign({on:false,h:19,m:30},n.daily||{})}; }
+function pushNotifs(){ if(!hasNotif()) return; try{ AndroidBridge.setNotifs(JSON.stringify(notifCfg())); }catch(e){} }
+function markEnteredToday(){ if(!(window.AndroidBridge&&AndroidBridge.markEntered)) return; try{ AndroidBridge.markEntered(TODAY); }catch(e){} }
+function sheetNotif(){
+  const n=notifCfg(), t=(o)=>`${pad(o.h)}:${pad(o.m)}`;
+  let h=sheetHead("Notifications","Des rappels sur ton téléphone, même appli fermée");
+  if(!hasNotif()) return h+`<div class="card pad"><p style="margin:0 0 8px">Les notifications fonctionnent dans l'appli Android (APK).</p><p class="note" style="margin:0">Installe ou mets à jour l'APK depuis la page de téléchargement, puis reviens ici pour les régler.</p></div>`;
+  const row=(k,title,sub,o)=>`<div class="card pad nrow"><div class="nhead"><div><b>${title}</b><small>${sub}</small></div><button class="tgl ${o.on?"on":""}" data-act="notifTog" data-k="${k}" role="switch" aria-checked="${o.on}" aria-label="${title}"><i></i></button></div>${o.on?`<label class="fld" style="margin-top:8px"><span>Heure</span><input type="time" value="${t(o)}" data-notif="${k}"></label>`:""}</div>`;
+  h+=row("month","Prépare ton mois","3 jours avant le début du mois : vérifier les prévisions du mois suivant",n.month);
+  h+=row("daily","Rappel quotidien","chaque jour, sauf si tu as déjà saisi quelque chose ce jour-là",n.daily);
+  h+=`<div class="actions"><button class="btn block" data-act="notifTest">Envoyer une notification d'essai</button></div><p class="note">Au premier réglage, Android te demande d'autoriser les notifications. Certains téléphones peuvent décaler un rappel de quelques minutes pour économiser la batterie.</p>`;
+  return h;
+}
+window.__appOpen=function(what){
+  try{ if(what==="prev"){ ui.tab="mois"; ui.ym=addMonths(CUR_YM,1); render(); openPrev("fixe"); }
+  else if(what==="add"){ ui.tab="mois"; ui.ym=CUR_YM; render(); closeSheet(); openFan(); } }catch(e){}
+};
 function sheetMembers(s){
   const M=members();
   let h=sheetHead("Personnes du foyer","Pour savoir pour qui sont les dépenses");
