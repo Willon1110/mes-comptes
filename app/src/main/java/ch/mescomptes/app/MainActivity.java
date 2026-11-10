@@ -57,10 +57,16 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
         pendingOpen = getIntent() != null ? getIntent().getStringExtra("open") : null;
-        NotifReceiver.channel(this);
-        NotifReceiver.schedule(this);
+        try { NotifReceiver.channel(this); NotifReceiver.schedule(this); } catch (Throwable ignored) { }
 
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                // Le moteur web a planté : on recrée la page au lieu de fermer l'appli.
+                try { ((android.view.ViewGroup) view.getParent()).removeView(view); view.destroy(); } catch (Throwable ignored) { }
+                recreate();
+                return true;
+            }
             @Override
             public void onPageFinished(WebView view, String url) {
                 loaded = true;
@@ -90,8 +96,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState != null) web.restoreState(savedInstanceState);
-        else web.loadUrl(APP_URL);
+        web.loadUrl(APP_URL);
     }
 
     @Override
@@ -102,7 +107,7 @@ public class MainActivity extends Activity {
     }
 
     private void deliverOpen() {
-        if (pendingOpen == null) return;
+        if (pendingOpen == null || web == null) return;
         final String o = pendingOpen; pendingOpen = null;
         web.postDelayed(() -> web.evaluateJavascript("setTimeout(function(){ if(window.__appOpen) window.__appOpen('" + o + "'); }, 1500)", null), 300);
     }
@@ -122,7 +127,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onSaveInstanceState(Bundle out) {
         super.onSaveInstanceState(out);
-        web.saveState(out);
     }
 
     @Override
@@ -165,8 +169,10 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void setNotifs(String json) {
-            getSharedPreferences(NotifReceiver.PREFS, MODE_PRIVATE).edit().putString("cfg", json).apply();
-            NotifReceiver.schedule(MainActivity.this);
+            try {
+                getSharedPreferences(NotifReceiver.PREFS, MODE_PRIVATE).edit().putString("cfg", json).apply();
+                NotifReceiver.schedule(MainActivity.this);
+            } catch (Throwable ignored) { }
         }
 
         @JavascriptInterface
@@ -176,14 +182,14 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void askPermission() {
-            if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                runOnUiThread(() -> requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7));
-            }
+            try { if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                runOnUiThread(() -> { try { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7); } catch (Throwable ignored) { } });
+            } } catch (Throwable ignored) { }
         }
 
         @JavascriptInterface
         public void testNotif() {
-            NotifReceiver.show(MainActivity.this, 3, "Mes Comptes", "Les notifications fonctionnent. Touche-moi pour ouvrir le + .", "add");
+            try { NotifReceiver.show(MainActivity.this, 3, "Mes Comptes", "Les notifications fonctionnent. Touche-moi pour ouvrir le + .", "add"); } catch (Throwable ignored) { }
         }
     }
 }

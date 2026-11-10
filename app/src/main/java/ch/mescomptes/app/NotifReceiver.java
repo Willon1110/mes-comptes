@@ -26,6 +26,11 @@ public class NotifReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context ctx, Intent intent) {
+        try { handle(ctx, intent); } catch (Throwable ignored) { }
+        try { schedule(ctx); } catch (Throwable ignored) { }
+    }
+
+    private void handle(Context ctx, Intent intent) {
         String kind = intent.getStringExtra(EXTRA_KIND);
         if (kind != null) {
             SharedPreferences sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -42,7 +47,6 @@ public class NotifReceiver extends BroadcastReceiver {
                 show(ctx, 1, "Prépare ton mois", mois + " arrive dans 3 jours : vérifie tes revenus et dépenses prévus.", "prev");
             }
         }
-        schedule(ctx);
     }
 
     static void channel(Context ctx) {
