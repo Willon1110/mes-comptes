@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    private String pendingOpen;
+    private boolean loaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +56,17 @@ public class MainActivity extends Activity {
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
+        pendingOpen = getIntent() != null ? getIntent().getStringExtra("open") : null;
+        NotifReceiver.channel(this);
+        NotifReceiver.schedule(this);
+
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                loaded = true;
+                deliverOpen();
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri u = req.getUrl();
@@ -80,6 +92,19 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(APP_URL);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String o = intent.getStringExtra("open");
+        if (o != null) { pendingOpen = o; if (loaded) deliverOpen(); }
+    }
+
+    private void deliverOpen() {
+        if (pendingOpen == null) return;
+        final String o = pendingOpen; pendingOpen = null;
+        web.postDelayed(() -> web.evaluateJavascript("setTimeout(function(){ if(window.__appOpen) window.__appOpen('" + o + "'); }, 1500)", null), 300);
     }
 
     @Override
@@ -137,5 +162,28 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean isApp() { return true; }
+
+        @JavascriptInterface
+        public void setNotifs(String json) {
+            getSharedPreferences(NotifReceiver.PREFS, MODE_PRIVATE).edit().putString("cfg", json).apply();
+            NotifReceiver.schedule(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void markEntered(String date) {
+            getSharedPreferences(NotifReceiver.PREFS, MODE_PRIVATE).edit().putString("entered", date).apply();
+        }
+
+        @JavascriptInterface
+        public void askPermission() {
+            if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                runOnUiThread(() -> requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7));
+            }
+        }
+
+        @JavascriptInterface
+        public void testNotif() {
+            NotifReceiver.show(MainActivity.this, 3, "Mes Comptes", "Les notifications fonctionnent. Touche-moi pour ouvrir le + .", "add");
+        }
     }
 }
