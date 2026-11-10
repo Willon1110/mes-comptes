@@ -34,6 +34,10 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private String pendingOpen;
     private boolean loaded;
+    private volatile boolean ready;
+    private final StringBuilder errors = new StringBuilder();
+    private static int crashes = 0;
+    private static long lastCrash = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +68,9 @@ public class MainActivity extends Activity {
             public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
                 // Le moteur web a planté : on recrée la page au lieu de fermer l'appli.
                 try { ((android.view.ViewGroup) view.getParent()).removeView(view); view.destroy(); } catch (Throwable ignored) { }
+                long now = System.currentTimeMillis();
+                crashes = now - lastCrash < 60000 ? crashes + 1 : 1; lastCrash = now;
+                if (crashes >= 2) { problem("Le moteur web d'Android (Android System WebView) a planté plusieurs fois en ouvrant l'appli."); return true; }
                 recreate();
                 return true;
             }
@@ -84,6 +91,12 @@ public class MainActivity extends Activity {
 
         web.setWebChromeClient(new WebChromeClient() {
             @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage m) {
+                if (m.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR && errors.length() < 1500)
+                    errors.append(m.message()).append(" (ligne ").append(m.lineNumber()).append(")\n");
+                return false;
+            }
+            @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = cb;
@@ -97,6 +110,19 @@ public class MainActivity extends Activity {
         });
 
         web.loadUrl(APP_URL);
+        web.postDelayed(() -> { if (!ready && !isFinishing()) problem("L'appli ne s'est pas affichée après 25 secondes."); }, 25000);
+    }
+
+    private void problem(String why) {
+        if (isFinishing()) return;
+        String det = errors.length() > 0 ? "\n\nDétail technique :\n" + errors : "";
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Mes Comptes ne s'ouvre pas")
+            .setMessage(why + "\n\nLa cause la plus fréquente est un « Android System WebView » pas à jour : mets-le à jour depuis le Play Store, puis réessaie." + det)
+            .setPositiveButton("Réessayer", (d, w) -> { crashes = 0; recreate(); })
+            .setNeutralButton("Mettre à jour WebView", (d, w) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.webview"))); } catch (Exception e) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.webview"))); } catch (Exception ignored) { } } })
+            .setNegativeButton("Ouvrir dans Chrome", (d, w) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APP_URL))); } catch (Exception ignored) { } })
+            .setCancelable(false).show();
     }
 
     @Override
@@ -166,6 +192,9 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean isApp() { return true; }
+
+        @JavascriptInterface
+        public void ready() { ready = true; crashes = 0; }
 
         @JavascriptInterface
         public void setNotifs(String json) {
