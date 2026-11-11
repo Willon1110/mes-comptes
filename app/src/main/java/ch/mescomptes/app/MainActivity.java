@@ -110,18 +110,53 @@ public class MainActivity extends Activity {
         });
 
         web.loadUrl(APP_URL);
-        web.postDelayed(() -> { if (!ready && !isFinishing()) problem("L'appli ne s'est pas affichée après 25 secondes."); }, 25000);
+        web.postDelayed(this::watchdog, 15000);
+    }
+
+    private static boolean healed = false;
+    private String stage = "?";
+
+    private void watchdog() {
+        if (ready || isFinishing()) return;
+        try { web.evaluateJavascript("String(window.__stage||'aucune')", v -> { if (v != null) stage = v; afterStage(); }); }
+        catch (Throwable t) { afterStage(); }
+    }
+
+    private void afterStage() {
+        if (ready || isFinishing()) return;
+        if (!healed) {
+            // 1er essai automatique : on vide le cache web (sans toucher aux données) et on recharge.
+            healed = true;
+            try { web.clearCache(true); } catch (Throwable ignored) { }
+            web.loadUrl(APP_URL);
+            web.postDelayed(this::watchdog, 15000);
+            return;
+        }
+        problem("L'appli ne s'est pas affichée.");
+    }
+
+    private void resetApp() {
+        try { android.webkit.WebStorage.getInstance().deleteAllData(); } catch (Throwable ignored) { }
+        try { android.webkit.CookieManager.getInstance().removeAllCookies(null); android.webkit.CookieManager.getInstance().flush(); } catch (Throwable ignored) { }
+        try { web.clearCache(true); web.clearHistory(); } catch (Throwable ignored) { }
+        try { deleteDatabase("webview.db"); deleteDatabase("webviewCache.db"); } catch (Throwable ignored) { }
+        crashes = 0; healed = false; recreate();
     }
 
     private void problem(String why) {
         if (isFinishing()) return;
-        String det = errors.length() > 0 ? "\n\nDétail technique :\n" + errors : "";
+        String det = "\n\nDétail technique : étape " + stage + (errors.length() > 0 ? "\n" + errors : "");
         new android.app.AlertDialog.Builder(this)
             .setTitle("Mes Comptes ne s'ouvre pas")
-            .setMessage(why + "\n\nLa cause la plus fréquente est un « Android System WebView » pas à jour : mets-le à jour depuis le Play Store, puis réessaie." + det)
+            .setMessage(why + "\n\n• Réessayer d'abord.\n• Sinon « Réinitialiser » (pas besoin de désinstaller).\n• Si ça revient souvent, mets à jour « Android System WebView »." + det)
             .setPositiveButton("Réessayer", (d, w) -> { crashes = 0; recreate(); })
             .setNeutralButton("Mettre à jour WebView", (d, w) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.webview"))); } catch (Exception e) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.webview"))); } catch (Exception ignored) { } } })
-            .setNegativeButton("Ouvrir dans Chrome", (d, w) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(APP_URL))); } catch (Exception ignored) { } })
+            .setNegativeButton("Réinitialiser", (d, w) -> new android.app.AlertDialog.Builder(this)
+                .setTitle("Réinitialiser l'appli ?")
+                .setMessage("Ça remplace la désinstallation : l'appli oublie la connexion sur ce téléphone. Tes données restent en sécurité dans ta base ; il faudra juste te reconnecter et retaper ta phrase secrète.")
+                .setPositiveButton("Réinitialiser", (d2, w2) -> resetApp())
+                .setNegativeButton("Annuler", (d2, w2) -> problem(why))
+                .setCancelable(false).show())
             .setCancelable(false).show();
     }
 
@@ -195,6 +230,8 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void ready() { ready = true; crashes = 0; }
+        @JavascriptInterface
+        public void reset() { runOnUiThread(MainActivity.this::resetApp); }
 
         @JavascriptInterface
         public void setNotifs(String json) {
