@@ -633,7 +633,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.0 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.1 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn calbtn" data-act="openCalendar" aria-label="Calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/></svg></button>
@@ -660,7 +660,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.0";
+const VERSION = "5.1";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -962,7 +962,7 @@ async function deriveKey(pass,saltB64,iter){
 async function encryptData(key,obj){ const iv=rnd(12); const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(obj))); return {iv:b64(iv),data:b64(ct)}; }
 async function decryptData(key,ivB64,dataB64){ const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(ivB64)},key,unb64(dataB64)); return JSON.parse(new TextDecoder().decode(pt)); }
 /* clé mémorisée sur l'appareil (non exportable) */
-function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open("mescomptes",1); r.onupgradeneeded=()=>r.result.createObjectStore("keys"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function idb(){ return withTimeout(new Promise((res,rej)=>{ const r=indexedDB.open("mescomptes",1); r.onblocked=()=>rej(new Error("idb blocked")); r.onupgradeneeded=()=>r.result.createObjectStore("keys"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }),4000,"idb"); }
 async function idbGet(k){ try{ const d=await idb(); return await new Promise(res=>{ const q=d.transaction("keys").objectStore("keys").get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); }); }catch(e){ return null; } }
 async function idbSet(k,v){ try{ const d=await idb(); await new Promise(res=>{ const t=d.transaction("keys","readwrite"); t.objectStore("keys").put(v,k); t.oncomplete=res; t.onerror=res; }); }catch(e){} }
 async function idbDel(k){ try{ const d=await idb(); await new Promise(res=>{ const t=d.transaction("keys","readwrite"); t.objectStore("keys").delete(k); t.oncomplete=res; t.onerror=res; }); }catch(e){} }
@@ -1026,9 +1026,11 @@ window.addEventListener("online",()=>{ if(S.dirty) doSave(); else refreshFromRem
 /* ---------- écrans d'accès ---------- */
 let G={view:"loading",err:"",busy:false,f:{email:"covoit.will@example.com"}};
 function gate(view,err){ G.view=view; G.err=err||""; G.busy=false; renderGate(); }
-function hideGate(){ G.view=null; renderGate(); }
+function hideGate(){ G.view=null; renderGate(); appReady(); window.__stage="app"; }
 const gf=(name,type,ph,extra="")=>`<input id="g-${name}" data-g="${name}" type="${type}" placeholder="${ph}" value="${esc(G.f[name]||"")}" ${extra}>`;
-function renderGate(){ try{ window.AndroidBridge&&AndroidBridge.ready&&AndroidBridge.ready(); }catch(e){}
+const appReady=()=>{ try{ window.AndroidBridge&&AndroidBridge.ready&&AndroidBridge.ready(); }catch(e){} };
+const withTimeout=(pr,ms,label)=>Promise.race([pr,new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout:"+label)),ms))]);
+function renderGate(){ if(G.view&&G.view!=="loading") appReady(); window.__stage="gate:"+(G.view||"none");
   const el=document.getElementById("gate");
   if(!G.view){ el.classList.remove("on"); el.innerHTML=""; return; }
   const conf=getConf();
@@ -1064,7 +1066,7 @@ function renderGate(){ try{ window.AndroidBridge&&AndroidBridge.ready&&AndroidBr
       ${err}<button class="btn primary block" type="submit" ${G.busy?"disabled":""}>${G.busy?"Déchiffrement…":"Déverrouiller"}</button></form>
       <button class="forgot" data-act="gForgotPass">Phrase oubliée ?</button><button class="forgot" data-act="gLogout">Se déconnecter</button>`;
   else if(G.view==="forgotpass") h+=`<p>La phrase secrète ne peut pas être récupérée : c'est ce qui garantit que personne d'autre ne lit tes données. Tu peux repartir d'un fichier de sauvegarde (.json) avec une nouvelle phrase. Les données en ligne actuelles seront remplacées.</p>${btn("gRestart","Repartir avec une nouvelle phrase","danger")}${btn("gToPass","Retour","")}`;
-  else if(G.view==="error") h+=`<p>${esc(G.err)}</p>${btn("gReload","Réessayer")}<button class="forgot" data-act="gLogout">Se déconnecter</button>`;
+  else if(G.view==="error") h+=`<p>${esc(G.err)}</p>${btn("gReload","Réessayer")}${window.AndroidBridge&&AndroidBridge.reset?`<button class="forgot" data-act="gReset">Réinitialiser l'appli (sans désinstaller)</button>`:""}<button class="forgot" data-act="gLogout">Se déconnecter</button>`;
   h+=`${conf&&G.view!=="setup"?`<p class="note" style="margin-top:18px">${esc(conf.url.replace(/^https?:\/\//,""))}</p>`:""}</div>`;
   el.innerHTML=h; el.classList.add("on");
 }
@@ -1074,15 +1076,19 @@ async function boot(){
   if(!window.isSecureContext||!window.crypto||!crypto.subtle){ gate("error","Cette page doit être ouverte en https (GitHub Pages) pour pouvoir chiffrer tes données."); return; }
   const conf=getConf(); if(!conf){ gate("setup"); return; }
   if(!window.supabase||!window.supabase.createClient){ const ok=await loadSupabaseLib(); if(!ok){ gate("nolib"); return; } }
-  try{ sb=window.supabase.createClient(conf.url,conf.anon,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"mc-auth",detectSessionInUrl:false}}); }
+  gate("loading"); window.__stage="client";
+  try{ sb=window.supabase.createClient(conf.url,conf.anon,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"mc-auth",detectSessionInUrl:false,lock:async(name,timeout,fn)=>await fn()}}); }
   catch(e){ gate("setup","URL ou clé invalide."); return; }
-  const {data:{session}}=await sb.auth.getSession();
+  window.__stage="getSession"; let session=null;
+  try{ session=(await withTimeout(sb.auth.getSession(),10000,"session")).data.session; }
+  catch(e){ gate("error","La connexion à ta base ne répond pas. Vérifie ta connexion internet puis touche « Réessayer »."); return; }
   if(!session){ gate("login"); return; }
   await afterLogin(session);
 }
 async function afterLogin(session){
   S.uid=session.user.id; S.email=session.user.email||"";
-  try{ const {data}=await sb.auth.mfa.getAuthenticatorAssuranceLevel(); if(data&&data.nextLevel==="aal2"&&data.currentLevel!=="aal2"){ gate("mfa"); return; } }catch(e){}
+  window.__stage="mfa";
+  try{ const {data}=await withTimeout(sb.auth.mfa.getAuthenticatorAssuranceLevel(),6000,"aal"); if(data&&data.nextLevel==="aal2"&&data.currentLevel!=="aal2"){ gate("mfa"); return; } }catch(e){}
   await openVault();
 }
 async function openVault(){
@@ -2744,6 +2750,7 @@ document.addEventListener("click",async e=>{
       if(/service_role|sb_secret_/.test(anon)||(anon.split(".").length===3&&(()=>{ try{ return JSON.parse(atob(anon.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).role==="service_role"; }catch(x){ return false; } })())){ gate("setup","C'est la clé secrète ! Ne l'utilise jamais ici : prends la clé publique (anon ou publishable)."); break; }
       localStorage.setItem(CONF_KEY,JSON.stringify({url,anon})); G.f={}; boot(); break; }
     case "gReload": location.reload(); break;
+    case "gReset": if(confirm("Réinitialiser l'appli sur ce téléphone ? Tes données restent dans ta base : il faudra te reconnecter et retaper ta phrase secrète.")){ try{ AndroidBridge.reset(); }catch(e){ location.reload(); } } break;
     case "gLogout": logout(); break;
     case "gChangeBase": askOrDo("Changer de base ?","Tu seras déconnecté et l'appli oubliera cette base sur ce téléphone. Tes données restent dans Supabase.","Changer",async()=>{ try{ await idbDel("k:"+S.uid); if(sb) await sb.auth.signOut(); }catch(x){} localStorage.removeItem(CONF_KEY); localStorage.removeItem(CACHE_KEY); location.reload(); }); break;
     case "gForgotPw": gate("forgotpw"); break;
