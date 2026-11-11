@@ -42,6 +42,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Garde la trace d'un éventuel plantage pour l'afficher au prochain lancement.
+        final Thread.UncaughtExceptionHandler prev = Thread.getDefaultUncaughtExceptionHandler();
+        if (!(prev instanceof CrashLog)) Thread.setDefaultUncaughtExceptionHandler(new CrashLog(getApplicationContext(), prev));
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#1B2350"));
         setContentView(web);
@@ -111,19 +114,60 @@ public class MainActivity extends Activity {
 
         web.loadUrl(APP_URL);
         web.postDelayed(this::watchdog, 15000);
+        showLastCrash();
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration c) {
+        // Multitâche, écran partagé, rotation : on garde la page telle quelle (pas de rechargement).
+        try { super.onConfigurationChanged(c); } catch (Throwable ignored) { }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try { if (web != null) { web.removeCallbacks(null); web.stopLoading(); ((android.view.ViewGroup) web.getParent()).removeView(web); web.destroy(); } } catch (Throwable ignored) { }
+        super.onDestroy();
+    }
+
+    private void showLastCrash() {
+        try {
+            android.content.SharedPreferences sp = getSharedPreferences("crash", MODE_PRIVATE);
+            final String log = sp.getString("log", null);
+            if (log == null) return;
+            sp.edit().remove("log").apply();
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("L'appli s'était fermée")
+                .setMessage("Elle a redémarré normalement. Si tu veux m'aider à corriger, copie ce détail et envoie-le :\n\n" + (log.length() > 1200 ? log.substring(0, 1200) : log))
+                .setPositiveButton("Copier", (d, w) -> { try { ((android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(android.content.ClipData.newPlainText("plantage", log)); Toast.makeText(this, "Copié", Toast.LENGTH_SHORT).show(); } catch (Throwable ignored) { } })
+                .setNegativeButton("Fermer", null).show();
+        } catch (Throwable ignored) { }
+    }
+
+    static class CrashLog implements Thread.UncaughtExceptionHandler {
+        final android.content.Context ctx; final Thread.UncaughtExceptionHandler prev;
+        CrashLog(android.content.Context c, Thread.UncaughtExceptionHandler p) { ctx = c; prev = p; }
+        @Override public void uncaughtException(Thread t, Throwable e) {
+            try {
+                java.io.StringWriter sw = new java.io.StringWriter(); e.printStackTrace(new java.io.PrintWriter(sw));
+                ctx.getSharedPreferences("crash", MODE_PRIVATE).edit().putString("log", "Android " + Build.VERSION.RELEASE + " · " + Build.MODEL + "\n" + sw).commit();
+            } catch (Throwable ignored) { }
+            if (prev != null) prev.uncaughtException(t, e);
+        }
     }
 
     private static boolean healed = false;
     private String stage = "?";
 
+    private boolean dead() { return isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed()); }
+
     private void watchdog() {
-        if (ready || isFinishing()) return;
+        if (ready || dead()) return;
         try { web.evaluateJavascript("String(window.__stage||'aucune')", v -> { if (v != null) stage = v; afterStage(); }); }
         catch (Throwable t) { afterStage(); }
     }
 
     private void afterStage() {
-        if (ready || isFinishing()) return;
+        if (ready || dead()) return;
         if (!healed) {
             // 1er essai automatique : on vide le cache web (sans toucher aux données) et on recharge.
             healed = true;
@@ -144,7 +188,7 @@ public class MainActivity extends Activity {
     }
 
     private void problem(String why) {
-        if (isFinishing()) return;
+        if (dead()) return;
         String det = "\n\nDétail technique : étape " + stage + (errors.length() > 0 ? "\n" + errors : "");
         new android.app.AlertDialog.Builder(this)
             .setTitle("Mes Comptes ne s'ouvre pas")
@@ -170,7 +214,7 @@ public class MainActivity extends Activity {
     private void deliverOpen() {
         if (pendingOpen == null || web == null) return;
         final String o = pendingOpen; pendingOpen = null;
-        web.postDelayed(() -> web.evaluateJavascript("setTimeout(function(){ if(window.__appOpen) window.__appOpen('" + o + "'); }, 1500)", null), 300);
+        web.postDelayed(() -> { if (!dead()) web.evaluateJavascript("setTimeout(function(){ if(window.__appOpen) window.__appOpen('" + o + "'); }, 1500)", null); }, 300);
     }
 
     @Override
@@ -192,6 +236,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (web == null) { moveTaskToBack(true); return; }
         web.evaluateJavascript("(window.__appBack?window.__appBack():false)", value -> {
             if (!"true".equals(value)) moveTaskToBack(true);
         });
@@ -231,7 +276,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void ready() { ready = true; crashes = 0; }
         @JavascriptInterface
-        public void reset() { runOnUiThread(MainActivity.this::resetApp); }
+        public void reset() { runOnUiThread(() -> { if (!dead()) resetApp(); }); }
 
         @JavascriptInterface
         public void setNotifs(String json) {
