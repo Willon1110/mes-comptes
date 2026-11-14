@@ -42,6 +42,9 @@ public class NotifReceiver extends BroadcastReceiver {
             } else if ("month".equals(kind)) {
                 Calendar n = Calendar.getInstance();
                 n.add(Calendar.MONTH, 1);
+                String ym = new SimpleDateFormat("yyyy-MM", Locale.US).format(n.getTime());
+                try { org.json.JSONArray pr = new org.json.JSONObject(sp.getString("cfg", "{}")).optJSONArray("prepared");
+                    if (pr != null) for (int i = 0; i < pr.length(); i++) if (ym.equals(pr.optString(i))) return; } catch (Throwable ignored) { }
                 String mois = new DateFormatSymbols(Locale.FRENCH).getMonths()[n.get(Calendar.MONTH)];
                 mois = mois.substring(0, 1).toUpperCase(Locale.FRENCH) + mois.substring(1);
                 show(ctx, 1, "Prépare ton mois", mois + " arrive dans 3 jours : vérifie tes revenus et dépenses prévus.", "prev");
