@@ -462,7 +462,15 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 [data-theme="lagon"] .acc.grand .v{color:#FFD27A!important}
 [data-theme="lagon"] .seg button.on{background:rgba(255,255,255,.22);color:#fff}
 [data-theme="lagon"] .calc-keys button{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
-.calbtn{margin-right:-4px}
+.calbtn{margin-right:-4px}.prevbtn{margin-right:-4px;position:relative}
+.prevbtn .pdot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--ochre);box-shadow:0 0 0 2px var(--bg)}
+.sheet.full{max-height:100%;height:100%;border-radius:0;padding-top:max(8px,env(safe-area-inset-top))}
+.psum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 10px}.psum>div{background:var(--surface-2);border-radius:14px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.psum small{font-size:11px;color:var(--muted)}.psum b{font-size:14.5px;color:var(--ink);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pacc{display:flex;flex-direction:column;gap:0;padding:4px 14px}.pacc>div{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}.pacc>div:last-child{border-bottom:0}
+.pacc b.neg{color:var(--neg)}.pmonth{display:flex;align-items:center;gap:8px;margin:2px 0 8px}.pmonth b{flex:1;text-align:center;font-size:16px;color:var(--ink)}
+.plast{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;color:var(--muted);margin-top:3px}.plast .lnk{padding:0;font-size:11.5px}
+.pdone{display:flex;align-items:center;gap:12px;padding:14px;margin-top:14px;cursor:pointer;width:100%;text-align:left}.pdone .box{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:#fff}.pdone.on .box{background:var(--pos);border-color:var(--pos)}.pdone span{display:flex;flex-direction:column}.pdone small{color:var(--muted);font-size:12px}
 .top-in .alertbtn,.top-in .histbtn{width:38px;height:38px;border-radius:12px}
 .top-in{gap:8px}
 .top-in .ver{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -532,7 +540,6 @@ header.top .app{color:var(--on-bg)} header.top .ver{color:var(--on-bg-muted)}
 .tile .badge{position:static;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:var(--neg);color:#fff;font-size:11px;font-weight:800;display:inline-grid;place-items:center}
 .tile.wide{grid-column:1/-1;min-height:0}
 .tile.tall{grid-row:span 2}
-.bento{grid-template-rows:repeat(4,minmax(118px,auto)) auto}
 .bento .prevtile{grid-column:1/-1;grid-row:5;flex-direction:row;align-items:center;gap:12px;padding:10px 14px;min-height:0}
 .bento .prevtile .ic{width:34px;height:34px;border-radius:11px;background:var(--surface-2);color:var(--accent);display:grid;place-items:center;flex:none}.bento .prevtile .ic svg{width:18px;height:18px}
 .bento .prevtile .main{flex:1;display:flex;flex-direction:column;min-width:0}.bento .prevtile>svg{width:16px;height:16px;color:var(--muted);flex:none}
@@ -636,6 +643,7 @@ input.picker{cursor:pointer;caret-color:transparent}
     <div class="ver">v5.2 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
+  <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
   <button class="histbtn calbtn" data-act="openCalendar" aria-label="Calendrier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/></svg></button>
   <button class="histbtn" data-act="openRecent" aria-label="Dernières saisies et modifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
 </div></header>
@@ -929,7 +937,7 @@ function monthAlerts(ym){
   out.sort((a,b)=>(b.strong?1:0)-(a.strong?1:0));
   memo.set(mk,out); return out;
 }
-function updateAlertBtn(){ const b=document.getElementById("alertbtn"); if(!b) return; const n=(typeof cfg!=="undefined"&&cfg&&cfg.accounts)?monthAlerts(ui.ym).length:0; b.hidden=!n; document.getElementById("alertn").textContent=n; b.setAttribute("aria-label",`${n} point${n>1?"s":""} à vérifier en ${monthName(ui.ym)}`); }
+function updateAlertBtn(){ updatePrevDot(); const b=document.getElementById("alertbtn"); if(!b) return; const n=(typeof cfg!=="undefined"&&cfg&&cfg.accounts)?monthAlerts(ui.ym).length:0; b.hidden=!n; document.getElementById("alertn").textContent=n; b.setAttribute("aria-label",`${n} point${n>1?"s":""} à vérifier en ${monthName(ui.ym)}`); }
 function sheetAlerts(s){
   const L=monthAlerts(s.ym);
   let h=sheetHead("À vérifier",`${monthName(s.ym)} ${s.ym.slice(0,4)} · ${L.length?L.length+" point"+(L.length>1?"s":""):"rien à signaler"}`);
@@ -1422,7 +1430,6 @@ function viewMonth(){
     <div class="card tile tall vbars b-vb" data-act="openGauges" role="button" tabindex="0" style="cursor:pointer"><span class="tt">Jauges des variables</span><small>${list.length?"les plus proches du budget"+(pages.length>1?" · glisse →":""):""}</small>${vbars}</div>
     <button class="card tile b-tr" data-act="openTransfers"><span class="tt">Virements${trLate?`<span class="badge" aria-label="${trLate} en retard">${trLate}</span>`:""}</span><small>${!cfg.accounts.some(a=>a.cur==="CHF")?(tr.length?`${tr.filter(r=>r.done).length} sur ${tr.length} fait${tr.length>1?"s":""}`:"aucun virement prévu"):xf.done.length?"CHF → € fait":xf.planned?"CHF → € à faire":"aucun transfert prévu"}</small><b>${fmt(trA,"EUR")}</b><small>prévu ${fmt(sumP(tr),"EUR")}</small></button>
     ${specTile(c,ym,sa,sp)}
-    <button class="card tile prevtile" data-act="openPrev" data-tab="fixe"><span class="ic">${I.fixed}</span><span class="main"><span class="tt">Prévisions du mois</span><small>${fmt(c.P.fixed+c.P.variable+c.P.special,"EUR")} prévus · fixes, variables, spéciales, virements</small></span>${I.right}</button>
     <button class="card tile b-jr" data-act="openJournal"><span class="tt">Journal</span><small>${(TX[ym]||[]).length} opération${(TX[ym]||[]).length>1?"s":""}</small><small class="go">Ouvrir →</small></button>
   </div>`;
   return h;
@@ -1780,7 +1787,7 @@ function sheetHead(title,sub,extra){ return `<div class="grab"></div><div class=
 function renderSheet(){
   const s=topS(), el=document.getElementById("sheet"); if(!s) return;
   const f={wizard:sheetWizard,income:sheetIncome,bulk:sheetBulk,account:sheetAccount,accounts:sheetAccounts,accEdit:sheetAccEdit,cats:sheetCats,catEdit:sheetCatEdit,merge:sheetMerge,mergeSub:sheetMergeSub,confirm:sheetConfirm,pin:sheetPin,mfa:sheetMfa,pass:sheetPass,expenses:sheetExpenses,chf:sheetChf,plans:sheetPlans,alerts:sheetAlerts,onboard:sheetOnboard,calendar:sheetCalendar,notif:sheetNotif,prev:sheetPrev,gauges:sheetGauges,display:sheetDisplay,look:sheetLook,accLook:sheetAccLook,recent:sheetRecent,members:sheetMembers,yearCfg:sheetYearCfg,yearPrev:sheetYearPrev,est:sheetEst,fixed:sheetFixed,transfers:sheetTransfers,occAct:sheetOccAct,varList:sheetVarList,catDetail:sheetCatDetail,people:sheetPeople,person:sheetPerson,journal:sheetJournal,security:sheetSecurity,yearSeries:sheetYearSeries,subEdit:sheetSubEdit,incomes:sheetIncomes}[s.type];
-  el.innerHTML=f(s); if(s.type==="plans"&&s.search&&s.q) filterPlans(s.q); updateLive();
+  el.classList.toggle("full",s.type==="prev"); el.innerHTML=f(s); if(s.type==="plans"&&s.search&&s.q) filterPlans(s.q); updateLive();
 }
 function sheetConfirm(s){ return sheetHead(esc(s.title))+`<p>${esc(s.msg)}</p><div class="actions"><button class="btn danger block" data-act="confirmOk">${esc(s.ok)}</button><button class="btn block" data-act="back">Annuler</button></div>`; }
 function askConfirm(title,msg,ok,run){ const c={type:"confirm",title,msg,ok,run}; if(stack.length) pushSheet(c); else openSheet(c); }
@@ -2218,7 +2225,7 @@ function sheetExpenses(s){
   { const ps=STAT_PERSONS(), pm=Math.max(1,...ps.map(([id])=>Math.max(c.A.people[id]||0,c.P.people[id]||0)));
     if(ps.some(([id])=>(c.A.people[id]||0)+(c.P.people[id]||0)>0)) h+=`<h4>Par personne</h4><div class="card pad">${ps.map(([id,n])=>{ const a=c.A.people[id]||0, p=c.P.people[id]||0; return `<button class="pbar" data-act="openPerson" data-id="${id}"><span class="pn">${n}</span><span class="pb"><i class="pp" style="width:${(p/pm*100).toFixed(1)}%"></i><i class="pa" style="width:${(a/pm*100).toFixed(1)}%"></i></span><span class="pv"><b>${fmt(a,"EUR")}</b><small>prévu ${fmt(p,"EUR")}</small></span></button>`; }).join("")}<div class="legend" style="padding:8px 0 0"><span><i style="background:var(--line)"></i>Prévu</span><span><i style="background:var(--title)"></i>Réel</span></div></div>`; }
   h+=`<h4>Toutes les dépenses (${list.length})</h4>${list.length?`<div class="card list">${list.map(t=>txRow(t)).join("")}</div>`:`<p class="note">Aucune dépense saisie ce mois-ci.</p>`}`;
-  h+=`<div class="actions"><button class="btn primary block" data-act="openPrev" data-tab="fixe">Prévisions du mois</button></div>`;
+  h+=`<div class="actions"><button class="btn primary block" data-act="openPrev" data-tab="fixe">Prévisions</button></div>`;
   return h;
 }
 function openChf(){
@@ -2617,9 +2624,14 @@ document.addEventListener("click",async e=>{
     case "openBulk": if(loading()) break; openBulk(); break;
     case "openExpenses": openExpenses(); break;
     case "openEst": if(loading()) break; openEst(); break;
-    case "openPrev": if(loading()) break; openPrev(a.dataset.tab||"fixe"); break;
+    case "openPrev": if(loading()) break; openPrev(a.dataset.tab||"fixe",ui.ym); break;
     case "openGauges": pushOrOpen({type:"gauges",ym:ui.ym}); break;
-    case "prevSave": prevSave(s); break;
+    case "prevSave": prevSave(s,!!a.dataset.stay); break;
+    case "openPrevSpace": if(loading()) break; openPrevSpace(); break;
+    case "prevGo": prevGoto(s,addMonths(s.ym,+a.dataset.d)); break;
+    case "prevAdj": s.d["e:"+a.dataset.key]=numStr(+a.dataset.v); renderSheet(); break;
+    case "prevCopy": prevCopy(s); break;
+    case "prevPrepared": prevTogglePrepared(s); break;
     case "catPrevSave": prevSave(s,true); break;
     case "prevSkip": { cfg.skips=cfg.skips||{}; const k=a.dataset.key+"@"+s.ym; if(cfg.skips[k]) delete cfg.skips[k]; else cfg.skips[k]=true; changed(["config"]); renderSheet(); break; }
     case "prevDel": { const m=(cfg.varEst||{})[s.ym]; if(m){ delete m[a.dataset.key]; if(!Object.keys(m).length) delete cfg.varEst[s.ym]; } delete s.d["e:"+a.dataset.key]; changed(["config"]); renderSheet(); break; }
@@ -3164,15 +3176,47 @@ function prevRows(ym,tab){
     rows.push({cat,key:k,label:cat,acc,cur:curOf(acc),planned:+est[k],base:null,est:est[k],skipped:false,monthOnly:true}); });
   return rows;
 }
-function openPrev(tab){
-  const ym=ui.ym, d={tab:tab||"fixe",scope:"month",nCat:"",nAcc:eurMain()||cfg.accounts[0].id,nTo:"",nAmt:"",nLabel:""};
+function prevDefaultYm(){ return +TODAY.slice(8,10)>=25?addMonths(CUR_YM,1):CUR_YM; }
+function openPrevSpace(tab,ym){ openPrev(tab||"fixe",ym||prevDefaultYm()); }
+function prevGoto(s,ym){ const dirty=Object.keys(s.d).some(k=>k.startsWith("e:")&&String(s.d[k]??"").trim()!==String((s.init||{})[k]??"").trim()); if(dirty) prevSave(s,true);
+  const tab=s.d.tab, scope=s.d.scope; const n=prevState(tab,ym); n.d.scope=scope; Object.assign(s,n); s.err=""; renderSheet(); document.getElementById("sheet").scrollTop=0; }
+function prevState(tab,ym){
+  const d={tab:tab||"fixe",scope:"month",nCat:"",nAcc:eurMain()||cfg.accounts[0].id,nTo:"",nAmt:"",nLabel:""};
+  PREV_TABS.forEach(([t])=>prevRows(ym,t).forEach(r=>{ d["e:"+r.key]=r.est!=null?numStr(r.est):""; }));
+  const init={}; Object.keys(d).filter(k=>k.startsWith("e:")).forEach(k=>{ init[k]=d[k]; });
+  return {type:"prev",ym,d,init};
+}
+function isPrepared(ym){ return !!((cfg.prepared||{})[ym]); }
+function updatePrevDot(){ const el=document.getElementById("prevdot"); if(!el) return; const ok=typeof cfg!=="undefined"&&cfg&&cfg.accounts; el.hidden=!(ok&&+TODAY.slice(8,10)>=25&&!isPrepared(addMonths(CUR_YM,1))); }
+function prevLast(ym,r){ // prévu / réel du mois précédent pour une ligne variable
+  const c=calcMonth(addMonths(ym,-1)); const v=c.varRows.find(x=>x.cat===r.cat&&x.acc===r.acc); return v&&(v.planned||v.actual)?v:null; }
+function prevCopy(s){
+  const ym=s.ym, pm=addMonths(ym,-1), src=(cfg.varEst||{})[pm]||{}, SK=cfg.skips||{};
+  const keys=Object.keys(src).filter(k=>k.startsWith("c:")||allPlans().some(p=>p.id===k&&occurrences(p,ym).length));
+  const sk=Object.keys(SK).filter(k=>k.endsWith("@"+pm)).map(k=>k.slice(0,-pm.length-1)).filter(id=>allPlans().some(p=>p.id===id&&occurrences(p,ym).length));
+  if(!keys.length&&!sk.length){ toast("Rien d'ajusté en "+monthName(pm)+" à recopier"); return; }
+  askConfirm("Copier "+monthName(pm)+" ?",`Les montants ajustés pour ${monthName(pm)} (${keys.length}) et les « pas ce mois-ci » (${sk.length}) seront repris pour ${monthName(ym)}. Ce que tu as déjà ajusté pour ${monthName(ym)} sera remplacé.`,"Copier",()=>{
+    cfg.varEst=cfg.varEst||{}; const m=Object.assign({},cfg.varEst[ym]||{}); keys.forEach(k=>{ m[k]=src[k]; }); if(Object.keys(m).length) cfg.varEst[ym]=m;
+    cfg.skips=cfg.skips||{}; sk.forEach(id=>{ cfg.skips[id+"@"+ym]=true; });
+    popSheet(); changed(["config"]); const top=topS(); if(top&&top.type==="prev"){ const n=prevState(top.d.tab,ym); Object.assign(top,n); renderSheet(); } toast("Prévisions de "+monthName(pm)+" recopiées"); });
+}
+function prevTogglePrepared(s){ cfg.prepared=cfg.prepared||{}; if(cfg.prepared[s.ym]) delete cfg.prepared[s.ym]; else cfg.prepared[s.ym]=true;
+  // on ne garde que les mois récents
+  Object.keys(cfg.prepared).forEach(k=>{ if(k<addMonths(CUR_YM,-2)) delete cfg.prepared[k]; });
+  changed(["config"]); pushNotifs(); updatePrevDot(); renderSheet(); if(cfg.prepared[s.ym]) toast(monthName(s.ym).replace(/^./,x=>x.toUpperCase())+" est prêt ✓"); }
+function openPrev(tab,ymArg){
+  const ym=ymArg||ui.ym, d={tab:tab||"fixe",scope:"month",nCat:"",nAcc:eurMain()||cfg.accounts[0].id,nTo:"",nAmt:"",nLabel:""};
   PREV_TABS.forEach(([t])=>prevRows(ym,t).forEach(r=>{ d["e:"+r.key]=r.est!=null?numStr(r.est):""; }));
   const init={}; Object.keys(d).filter(k=>k.startsWith("e:")).forEach(k=>{ init[k]=d[k]; });
   pushOrOpen({type:"prev",ym,d,init});
 }
 function sheetPrev(s){
   const d=s.d, ym=s.ym, tab=d.tab, c=calcMonth(ym);
-  let h=sheetHead("Prévisions du mois",`${monthName(ym)} ${ym.slice(0,4)} · laisse vide pour garder le montant habituel`);
+  let h=sheetHead("Prévisions","laisse un montant vide pour garder le montant habituel");
+  h+=`<div class="pmonth"><button class="iconbtn" data-act="prevGo" data-d="-1" aria-label="Mois précédent">${I.left}</button><b>${monthName(ym).replace(/^./,x=>x.toUpperCase())} ${ym.slice(0,4)}${isPrepared(ym)?" ✓":""}</b><button class="iconbtn" data-act="prevGo" data-d="1" aria-label="Mois suivant">${I.right}</button></div>`;
+  { const P=c.P, dep=P.fixed+P.variable+P.special+(P.fees||0), sav=P.income-dep;
+    h+=`<div class="psum"><div><small>Revenus</small><b>${fmt(P.income,"EUR")}</b></div><div><small>Dépenses</small><b>${fmt(dep,"EUR")}</b></div><div><small>Épargne</small><b class="${sav<0?"neg":""}">${fmt(sav,"EUR")}</b></div></div>`;
+    h+=`<div class="card pacc">${cfg.accounts.map(a=>{ const v=endBalance(a.id,ym); return `<div><span><span class="cdot" style="--c:${a.color};margin-right:6px"></span>${esc(a.name)}</span><b class="${isFinite(v)&&v<-0.004?"neg":""}">${isFinite(v)?fmt(v,a.cur):"—"}</b></div>`; }).join("")}</div><p class="note" style="margin-top:4px">Solde prévu de chaque compte au ${lastDay(ym).slice(8)} ${monthName(ym).toLowerCase()}.</p>`; }
   const tot=t=>t==="fixe"?c.P.fixed:t==="variable"?c.P.variable:t==="special"?c.P.special:c.occ.filter(o=>o.p.kind==="transfer").reduce((x,o)=>x+conv(o.amount!=null?o.amount:o.p.amount,curOf(o.p.from),c.rP),0);
   h+=`<div class="seg ptabs" role="tablist">${PREV_TABS.map(([v,l])=>`<button type="button" role="tab" data-act="set" data-f="tab" data-v="${v}" class="${tab===v?"on":""}" aria-selected="${tab===v}">${l}<small>${fmt(tot(v),"EUR")}</small></button>`).join("")}</div>`;
   const rows=prevRows(ym,tab);
@@ -3180,13 +3224,14 @@ function sheetPrev(s){
   if(!rows.length) h+=`<p class="note">${tab==="transfer"?"Aucun virement prévu ce mois-ci.":`Aucune dépense ${tab==="fixe"?"fixe":tab==="variable"?"variable":"spéciale"} prévue ce mois-ci.`}</p>`;
   else h+=`<div class="card pad" style="padding-top:2px;padding-bottom:2px">${rows.map(r=>{
     const meta=[r.to?accName(r.acc)+" → "+accName(r.to):accName(r.acc),r.date?"le "+shortDate(r.date):"",r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""].filter(Boolean).join(" · ");
-    return `<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.label)}</b><small>${esc(meta)}</small>${r.skipped?`<small class="neg">pas ce mois-ci</small>`:""}</div>
+    return `<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.label)}</b><small>${esc(meta)}</small>${r.skipped?`<small class="neg">pas ce mois-ci</small>`:""}${tab==="variable"&&!r.skipped?(()=>{ const L=prevLast(ym,r); return L?`<div class="plast"><span>Mois dernier : prévu ${fmt(L.planned,r.cur)} · réel ${fmt(L.actual,r.cur)}</span>${L.actual>0?`<button class="lnk" data-act="prevAdj" data-key="${esc(r.key)}" data-v="${r2(L.actual)}">Ajuster</button>`:""}</div>`:""; })():""}</div>
       <div class="pcol">${r.skipped?"":inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(r.label)}"`)}${r.monthOnly?`<button class="lnk" data-act="prevDel" data-key="${esc(r.key)}">Retirer</button>`:`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">${r.skipped?"Rétablir":"Pas ce mois-ci"}</button>`}</div></div>`; }).join("")}</div>`;
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
-  h+=`<div class="actions"><button class="btn primary block" data-act="prevSave">Enregistrer les prévisions</button></div>`;
+  h+=`<div class="actions"><button class="btn primary block" data-act="prevSave" data-stay="1">Enregistrer les prévisions</button><button class="btn block" data-act="prevCopy">Copier ${monthName(addMonths(ym,-1)).toLowerCase()}</button></div>`;
   const cats=tab==="transfer"?[]:catsOf("expense",tab);
   if(tab==="transfer") h+=`<h4>Ajouter un virement pour ce mois</h4><div class="form">${fld("Libellé",inp("nLabel","text",'placeholder="Ex. Épargne de Noël"'))}<div class="grid2">${fld("Depuis",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}${fld("Vers",sel("nTo",[["","Choisir…"]].concat(cfg.accounts.filter(a=>a.id!==d.nAcc).map(a=>[a.id,a.name]))))}</div>${fld(`Montant envoyé (${curOf(d.nAcc)})`,inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}<button class="btn" data-act="prevAdd">Ajouter</button></div>`;
   else h+=`<h4>Ajouter une prévision pour ce mois</h4><div class="form">${tab==="fixe"?fld("Libellé",inp("nLabel","text",'placeholder="Ex. Réparation voiture"')):""}<div class="grid2">${fld("Catégorie",sel("nCat",[["","Choisir…"]].concat(cats.map(x=>[x.name,x.name]))))}${fld("Compte",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}</div>${fld("Montant",inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}<button class="btn" data-act="prevAdd">Ajouter</button></div>`;
+  h+=`<button class="card pdone ${isPrepared(ym)?"on":""}" data-act="prevPrepared" aria-pressed="${isPrepared(ym)}"><span class="box">${isPrepared(ym)?"✓":""}</span><span><b>Mois préparé</b><small>${isPrepared(ym)?"La notification « Prépare ton mois » ne sera pas envoyée.":"Coche quand tout est prêt : plus de rappel pour "+monthName(ym).toLowerCase()+"."}</small></span></button>`;
   if(tab==="variable") h+=`<p class="note">Un budget réparti sur plusieurs comptes se règle dans <button class="lnk" style="display:inline;padding:0" data-act="openEst">les budgets des dépenses variables</button>.</p>`;
   return h;
 }
@@ -3250,7 +3295,7 @@ function sheetCalendar(s){
 /* ---------- notifications (appli Android) ---------- */
 const hasNotif=()=>!!(window.AndroidBridge&&AndroidBridge.setNotifs);
 function notifCfg(){ const n=cfg.notif||{}; return {month:Object.assign({on:false,h:18,m:0},n.month||{}),daily:Object.assign({on:false,h:19,m:30},n.daily||{})}; }
-function pushNotifs(){ if(!hasNotif()) return; try{ AndroidBridge.setNotifs(JSON.stringify(notifCfg())); }catch(e){} }
+function pushNotifs(){ if(!hasNotif()) return; try{ AndroidBridge.setNotifs(JSON.stringify(Object.assign(notifCfg(),{prepared:Object.keys(cfg.prepared||{})}))); }catch(e){} }
 function markEnteredToday(){ if(!(window.AndroidBridge&&AndroidBridge.markEntered)) return; try{ AndroidBridge.markEntered(TODAY); }catch(e){} }
 function sheetNotif(){
   const n=notifCfg(), t=(o)=>`${pad(o.h)}:${pad(o.m)}`;
@@ -3263,7 +3308,7 @@ function sheetNotif(){
   return h;
 }
 window.__appOpen=function(what){
-  try{ if(what==="prev"){ ui.tab="mois"; ui.ym=addMonths(CUR_YM,1); render(); openPrev("fixe"); }
+  try{ if(what==="prev"){ openPrevSpace("fixe",addMonths(CUR_YM,1)); }
   else if(what==="add"){ ui.tab="mois"; ui.ym=CUR_YM; render(); closeSheet(); openFan(); } }catch(e){}
 };
 function sheetMembers(s){
@@ -3363,6 +3408,7 @@ const TOUR=[
   {tab:"mois",sel:".b-sp",t:"Spéciales",x:"Anniversaires, Noël et événements du mois, avec le budget qu'il reste. En décembre, elle se met aux couleurs de Noël."},
   {tab:"mois",sel:".fab",t:"Ajoute ta première opération",x:"Touche le bouton + maintenant : choisis Dépense dans l'éventail, puis la catégorie, le montant et le compte. La visite reprendra ensuite.",tap:true},
   {tab:"mois",sel:"#alertbtn",t:"À vérifier",x:"Ce triangle apparaît s'il y a un doublon ou une incohérence dans le mois. Touche-le pour corriger.",optional:true},
+  {tab:"mois",sel:".prevbtn",t:"Prévisions",x:"Ce bouton ouvre ton espace de prévisions : choisis le mois, ajuste fixes, variables, spéciales et virements, puis coche « Mois préparé »."},
   {tab:"mois",sel:".histbtn",t:"Dernières saisies",x:"Cette horloge montre tes dernières saisies et modifications. Touche une ligne pour la corriger, ou la corbeille pour l'effacer."},
   {tab:"comptes",sel:".accounts,.arrowlist,.bstack",t:"Tes comptes",x:"Le solde de chaque compte, aujourd'hui ou prévu en fin de mois. Touche un compte pour son détail, appui long pour le déplacer."},
   {tab:"annee",sel:".ytiles,.yblocks",t:"Ton année",x:"Tes chiffres clés et des graphiques. Appui long sur l'un d'eux pour le déplacer ou le masquer."},
