@@ -642,7 +642,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.4 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.5 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -670,7 +670,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.4";
+const VERSION = "5.5";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -2188,7 +2188,9 @@ function sheetCatDetail(s){
     h+=`<h4>Prévision de ce mois</h4>`;
     if(pr.length){ h+=`<div class="card pad" style="padding-top:2px;padding-bottom:6px">${pr.map(r=>`<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.sub&&subOf(r.cat,r.sub)?catLabel(r.cat,r.sub,r.sub2).split(" › ").slice(1).join(" › ")+" · "+accName(r.acc):accName(r.acc))}</b><small>${r.skipped?"pas ce mois-ci":r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""}</small></div><div class="pcol">${r.skipped?`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">Rétablir</button>`:inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(accName(r.acc))}"`)}</div></div>`).join("")}
       ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer la prévision</button></div>`; }
-    else h+=`<p class="note">Aucun budget prévu pour ${esc(s.cat)} ce mois-ci.</p>`; }
+    else h+=`<p class="note">Aucun budget variable prévu pour ${esc(s.cat)} ce mois-ci.</p><div class="actions" style="margin-top:6px"><button class="btn primary block" data-act="prevForCat" data-cat="${esc(s.cat)}">Prévoir un budget pour ${esc(s.cat)}</button></div>`;
+    const fx=c.pointRows.filter(r=>r.o.p.kind==="expense"&&!r.o.p.refund&&(r.o.p.nature||"fixe")==="fixe"&&r.o.p.cat===s.cat).reduce((x,r)=>x+conv(r.planned,r.cur,c.rP),0);
+    if(fx>0.004) h+=`<p class="note">Dépenses fixes prévues dans ${esc(s.cat)} : ${fmt(fx,"EUR")}. Elles ne comptent pas dans cette jauge (elles sont dans la tuile Dépenses fixes).</p>`; }
   { const G=subGroups(c,s.cat,null,txs);
     if(G.length&&!(G.length===1&&!G[0].id)){ const budg=G.some(g=>g.id&&g.p>0), mx=Math.max(1,...G.map(g=>g.a));
       if(!budg) G.forEach(g=>{ if(!g.id) g.name="Sans sous-catégorie"; });
@@ -2653,6 +2655,7 @@ document.addEventListener("click",async e=>{
     case "prevSave": prevSave(s,!!a.dataset.stay); break;
     case "openPrevSpace": if(loading()) break; openPrevSpace(); break;
     case "prevGo": prevGoto(s,addMonths(s.ym,+a.dataset.d)); break;
+    case "prevForCat": { const cat=a.dataset.cat, ym=s.ym; openPrev(isSpecialCat(catByName(cat))?"special":"variable",ym); const t=topS(); if(t&&t.type==="prev"){ t.d.nCat=cat; renderSheet(); setTimeout(()=>{ const el=document.querySelector('#sheet [data-f="nAmt"]'); if(el) el.scrollIntoView({block:"center",behavior:"smooth"}); },80); } break; }
     case "catSub": s.openSub=s.openSub===a.dataset.sub?null:a.dataset.sub; renderSheet(); break;
     case "prevAdj": s.d["e:"+a.dataset.key]=numStr(+a.dataset.v); renderSheet(); break;
     case "prevCopy": prevCopy(s); break;
@@ -2665,6 +2668,7 @@ document.addEventListener("click",async e=>{
         cfg.plans.push({id:uid8(),kind:"transfer",nature:"fixe",label:String(d.nLabel||"").trim()||`${accName(d.nAcc)} → ${accName(d.nTo)}`,amount:r2(v),from:d.nAcc,to:d.nTo,freq:"once",date:s.ym===CUR_YM?TODAY:s.ym+"-01",persons:[]});
         d.nAmt=""; d.nLabel=""; d.nTo=""; changed(["config"]); renderSheet(); toast("Virement prévu ajouté"); break; }
       if(!d.nCat){ s.err="Choisis une catégorie."; renderSheet(); break; } if(!(v>0)){ s.err="Indique un montant."; renderSheet(); break; } s.err="";
+      { const cO=catByName(d.nCat); if(cO&&!isSpecialCat(cO)&&(d.tab==="fixe"||d.tab==="variable")&&catUse(cO)!=="both"&&catUse(cO)!==d.tab){ cO.use="both"; setTimeout(()=>toast(`${cO.name} est maintenant en fixe et variable`),1600); } }
       if(d.tab==="fixe"){ const sub=subOf(d.nCat,d.nSub)?d.nSub:"", sub2=sub&&sub2Of(d.nCat,sub,d.nSub2)?d.nSub2:""; cfg.plans.push({id:uid8(),kind:"expense",nature:"fixe",label:String(d.nLabel||"").trim()||catLabel(d.nCat,sub,sub2),amount:r2(v),acc:d.nAcc,cat:d.nCat,sub,sub2,freq:"once",date:s.ym===CUR_YM?TODAY:s.ym+"-01",persons:[]}); }
       else { cfg.varEst=cfg.varEst||{}; const sub=subOf(d.nCat,d.nSub)?d.nSub:"", sub2=sub&&sub2Of(d.nCat,sub,d.nSub2)?d.nSub2:"", m=cfg.varEst[s.ym]=cfg.varEst[s.ym]||{}, k=estKey(d.nCat,d.nAcc,sub,sub2); m[k]=r2((+m[k]||0)+v); d["e:"+k]=numStr(m[k]); s.init=s.init||{}; s.init["e:"+k]=d["e:"+k]; }
       d.nAmt=""; d.nLabel=""; d.nSub=""; d.nSub2=""; changed(["config"]); renderSheet(); toast("Prévision ajoutée"); break; }
@@ -3262,10 +3266,10 @@ function sheetPrev(s){
       <div class="pcol">${r.skipped?"":inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(r.label)}"`)}${r.monthOnly?`<button class="lnk" data-act="prevDel" data-key="${esc(r.key)}">Retirer</button>`:`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">${r.skipped?"Rétablir":"Pas ce mois-ci"}</button>`}</div></div>`; }).join("")}</div>`;
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
   h+=`<div class="actions"><button class="btn primary block" data-act="prevSave" data-stay="1">Enregistrer les prévisions</button><button class="btn block" data-act="prevCopy">Copier ${monthName(addMonths(ym,-1)).toLowerCase()}</button></div>`;
-  const cats=tab==="transfer"?[]:catsOf("expense",tab);
+  const cats=tab==="transfer"?[]:catsOf("expense",tab), other=tab==="fixe"||tab==="variable"?catsOf("expense").filter(x=>!isSpecialCat(x)&&!cats.includes(x)):[];
   if(tab==="transfer") h+=`<h4>Ajouter un virement pour ce mois</h4><div class="form">${fld("Libellé",inp("nLabel","text",'placeholder="Ex. Épargne de Noël"'))}<div class="grid2">${fld("Depuis",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}${fld("Vers",sel("nTo",[["","Choisir…"]].concat(cfg.accounts.filter(a=>a.id!==d.nAcc).map(a=>[a.id,a.name]))))}</div>${fld(`Montant envoyé (${curOf(d.nAcc)})`,inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}<button class="btn" data-act="prevAdd">Ajouter</button></div>`;
   else { const cO=catByName(d.nCat), subs=cO&&!cO.special?(cO.subs||[]):[], sO=subs.find(x=>x.id===d.nSub), subs2=sO&&Array.isArray(sO.subs)?sO.subs:[];
-    h+=`<h4>Ajouter une prévision pour ce mois</h4><div class="form">${tab==="fixe"?fld("Libellé",inp("nLabel","text",'placeholder="Ex. Réparation voiture"')):""}<div class="grid2">${fld("Catégorie",sel("nCat",[["","Choisir…"]].concat(cats.map(x=>[x.name,x.name]))))}${fld("Compte",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}</div>${subs.length?`<div class="grid2">${fld("Sous-catégorie",sel("nSub",[["","Aucune"]].concat(subs.map(x=>[x.id,x.name]))))}${subs2.length?fld("Précision",sel("nSub2",[["","Aucune"]].concat(subs2.map(x=>[x.id,x.name])))):"<div></div>"}</div>`:""}${fld("Montant",inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}<button class="btn" data-act="prevAdd">Ajouter</button></div>`; }
+    h+=`<h4>Ajouter une prévision pour ce mois</h4><div class="form">${tab==="fixe"?fld("Libellé",inp("nLabel","text",'placeholder="Ex. Réparation voiture"')):""}<div class="grid2">${fld("Catégorie",sel("nCat",[["","Choisir…"]].concat(cats.map(x=>[x.name,x.name]),other.map(x=>[x.name,x.name+(tab==="fixe"?" · variable":" · fixe")]))))}${fld("Compte",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}</div>${other.some(x=>x.name===d.nCat)?`<p class="note" style="margin:-4px 0 8px">${esc(d.nCat)} est réglée en dépenses ${tab==="fixe"?"variables":"fixes"} : en ajoutant, elle passera en « fixe et variable ».</p>`:""}${subs.length?`<div class="grid2">${fld("Sous-catégorie",sel("nSub",[["","Aucune"]].concat(subs.map(x=>[x.id,x.name]))))}${subs2.length?fld("Précision",sel("nSub2",[["","Aucune"]].concat(subs2.map(x=>[x.id,x.name])))):"<div></div>"}</div>`:""}${fld("Montant",inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}<button class="btn" data-act="prevAdd">Ajouter</button></div>`; }
   h+=`<button class="card pdone ${isPrepared(ym)?"on":""}" data-act="prevPrepared" aria-pressed="${isPrepared(ym)}"><span class="box">${isPrepared(ym)?"✓":""}</span><span><b>Mois préparé</b><small>${isPrepared(ym)?"La notification « Prépare ton mois » ne sera pas envoyée.":"Coche quand tout est prêt : plus de rappel pour "+monthName(ym).toLowerCase()+"."}</small></span></button>`;
   if(tab==="variable") h+=`<p class="note">Un budget réparti sur plusieurs comptes se règle dans <button class="lnk" style="display:inline;padding:0" data-act="openEst">les budgets des dépenses variables</button>.</p>`;
   return h;
