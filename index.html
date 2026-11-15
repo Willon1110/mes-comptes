@@ -464,7 +464,21 @@ section.yitem.dragging>*{box-shadow:0 12px 30px rgba(0,0,0,.35)}
 [data-theme="lagon"] .acc.grand .v{color:#FFD27A!important}
 [data-theme="lagon"] .seg button.on{background:rgba(255,255,255,.22);color:#fff}
 [data-theme="lagon"] .calc-keys button{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
-.calbtn{margin-right:-4px}.prevbtn{margin-right:-4px;position:relative}
+.calbtn{margin-right:-4px}
+:root{--fx:#5B52C4;--vx:#1D9E75}
+.nb{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;padding:2px 9px 2px 6px;border-radius:99px;border:0;white-space:nowrap;line-height:1.5;font-family:inherit;cursor:default}
+button.nb{cursor:pointer}.nb svg{width:13px;height:13px}.nb .nsw{margin-left:3px;opacity:.75}
+.nb.f,.ni.f{background:color-mix(in srgb,var(--fx) 17%,var(--surface));color:color-mix(in srgb,var(--fx) 78%,var(--ink))}
+.nb.v,.ni.v{background:color-mix(in srgb,var(--vx) 17%,var(--surface));color:color-mix(in srgb,var(--vx) 70%,var(--ink))}
+.nb.s,.ni.s{background:color-mix(in srgb,var(--ochre) 20%,var(--surface));color:color-mix(in srgb,var(--ochre) 75%,var(--ink))}
+.ni{position:relative;width:28px;height:28px;display:grid;place-items:center;flex:none;border-radius:8px}.ni.v{border-radius:50%}.ni svg{width:16px;height:16px}
+.ni>i{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px var(--surface)}
+.ni.sm{width:22px;height:22px;display:inline-grid;vertical-align:-6px;margin-right:7px}.ni.sm svg{width:13px;height:13px}.ni.sm>i{width:8px;height:8px}
+.tile.tfx,.tile.tvx{position:relative;overflow:hidden}.tile.tfx::before,.tile.tvx::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--fx)}.tile.tvx::before{background:var(--vx)}
+.npsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px}.npsum>div{border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;font-size:11.5px;font-weight:700}.npsum b{font-size:14.5px;font-weight:800;white-space:nowrap}
+.npsum .f{background:color-mix(in srgb,var(--fx) 15%,var(--surface));color:color-mix(in srgb,var(--fx) 78%,var(--ink))}.npsum .v{background:color-mix(in srgb,var(--vx) 15%,var(--surface));color:color-mix(in srgb,var(--vx) 70%,var(--ink))}.npsum .s{background:color-mix(in srgb,var(--ochre) 18%,var(--surface));color:color-mix(in srgb,var(--ochre) 75%,var(--ink))}.npsum .t{background:var(--surface-2);color:var(--muted)}.npsum .t b{color:var(--ink)}
+.prow .nbl{margin-bottom:3px}
+.wz-nat .tile .ic.f,.wz-nat .tile .ic.v,.wz-nat .tile .ic.s{border-radius:10px}.prevbtn{margin-right:-4px;position:relative}
 .prevbtn .pdot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:var(--ochre);box-shadow:0 0 0 2px var(--bg)}
 .sheet.full{max-height:100%;height:100%;border-radius:0;padding-top:max(8px,env(safe-area-inset-top))}
 .psum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 10px}.psum>div{background:var(--surface-2);border-radius:14px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -642,7 +656,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.5 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.6 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -670,7 +684,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.5";
+const VERSION = "5.6";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -722,6 +736,10 @@ const catUse = c => c&&(c.use==="fixe"||c.use==="variable")?c.use:"both";
 const catsOf = (kind,nature) => cfg.categories.filter(c=>catType(c)===(kind==="income"?"income":"expense")&&(kind==="income"||!nature||(nature==="special")===isSpecialCat(c))&&(kind==="income"||!(nature==="fixe"||nature==="variable")||catUse(c)==="both"||catUse(c)===nature));
 const USE_FIXE=["logement","assurances","abonnements","frais bancaires"], USE_VAR=["courses","transport","sante","loisirs"];
 const NATURE_L = {fixe:"fixe",variable:"variable",special:"spéciale"};
+const NAT={fixe:["f","Fixe","cal"],variable:["v","Variable","wave"],special:["s","Spéciale","star"]};
+const natOf = x => x&&x.nature==="variable"?"variable":x&&x.nature==="special"?"special":"fixe";
+function natBadge(n,attrs){ const [c,l,ic]=NAT[n]; return attrs?`<button type="button" class="nb ${c}" ${attrs}>${I[ic]}${l}<span class="nsw" aria-hidden="true">⇄</span></button>`:`<span class="nb ${c}">${I[ic]}${l}</span>`; }
+function natIcon(n,acc,sm){ const [c,l,ic]=NAT[n]; return `<span class="ni ${c}${sm?" sm":""}" role="img" aria-label="${l}">${I[ic]}${acc?`<i style="--c:${accColor(acc)}"></i>`:""}</span>`; }
 function defaultAccounts(){
   const d=CUR_YM+"-01";
   return [
@@ -1254,6 +1272,7 @@ const I={
   people:sv('<circle cx="9" cy="8" r="3.2"/><path d="M3 19c.8-3.3 3.2-5 6-5s5.2 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14c2.4.2 4 1.8 4.5 4.5"/>'),
   list:sv('<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',2.4),
   trash:sv('<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>'),
+  star:sv('<path d="M12 4l2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/>'),
   cal:sv('<rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>'),
 };
 
@@ -1430,8 +1449,8 @@ function viewMonth(){
   const barCol=p=>p>1?"var(--neg)":p>.85?"var(--ochre)":"var(--pos)";
   const vbars=pages.length?`<div class="vpager">${pages.map(pg=>`<div class="vpage">${pg.map(o=>`<button class="vcol" data-act="openCatDetail" data-cat="${esc(o.cat)}"><span class="vpc" style="color:${barCol(o.pct)}">${o.pct>=9.99?"hors budget":Math.round(o.pct*100)+" %"}</span><span class="vbar"><i class="vf" data-h="${Math.min(100,o.pct*100).toFixed(1)}" style="background:${barCol(o.pct)}"></i></span><span class="vlb">${esc(o.cat)}</span></button>`).join("")}</div>`).join("")}</div>${pages.length>1?`<div class="vdots">${pages.map((_,i)=>`<i class="${i?"":"on"}"></i>`).join("")}</div>`:""}`:`<p class="note" style="margin:8px 0 0">Aucune dépense variable ce mois-ci.</p>`;
   h+=`<div class="bento">
-    <button class="card tile" data-act="openFixed"><span class="tt">Dépenses fixes${fxLate?`<span class="badge" aria-label="${fxLate} en retard">${fxLate}</span>`:""}</span><small>${fx.filter(r=>r.done).length} confirmée${fx.filter(r=>r.done).length>1?"s":""} sur ${fx.length}</small><b>${fmt(fxA,"EUR")}</b>${mini(fxA,fxP,"var(--title)")}<small>prévu ${fmt(fxP,"EUR")}</small></button>
-    <button class="card tile" data-act="openVarList"><span class="tt">Dépenses variables</span><small>reste ${fmt(Math.max(0,vp-va),"EUR")}</small><b>${fmt(va,"EUR")}</b>${mini(va,vp,"var(--pos)")}<small>budget ${fmt(vp,"EUR")}</small></button>
+    <button class="card tile tfx" data-act="openFixed"><span class="tt">Dépenses fixes${fxLate?`<span class="badge" aria-label="${fxLate} en retard">${fxLate}</span>`:""}</span><small>${fx.filter(r=>r.done).length} confirmée${fx.filter(r=>r.done).length>1?"s":""} sur ${fx.length}</small><b>${fmt(fxA,"EUR")}</b>${mini(fxA,fxP,"var(--title)")}<small>prévu ${fmt(fxP,"EUR")}</small></button>
+    <button class="card tile tvx" data-act="openVarList"><span class="tt">Dépenses variables</span><small>reste ${fmt(Math.max(0,vp-va),"EUR")}</small><b>${fmt(va,"EUR")}</b>${mini(va,vp,"var(--pos)")}<small>budget ${fmt(vp,"EUR")}</small></button>
     <div class="card tile tall vbars b-vb" data-act="openGauges" role="button" tabindex="0" style="cursor:pointer"><span class="tt">Jauges des variables</span><small>${list.length?"les plus proches du budget"+(pages.length>1?" · glisse →":""):""}</small>${vbars}</div>
     <button class="card tile b-tr" data-act="openTransfers"><span class="tt">Virements${trLate?`<span class="badge" aria-label="${trLate} en retard">${trLate}</span>`:""}</span><small>${!cfg.accounts.some(a=>a.cur==="CHF")?(tr.length?`${tr.filter(r=>r.done).length} sur ${tr.length} fait${tr.length>1?"s":""}`:"aucun virement prévu"):xf.done.length?"CHF → € fait":xf.planned?"CHF → € à faire":"aucun transfert prévu"}</small><b>${fmt(trA,"EUR")}</b><small>prévu ${fmt(sumP(tr),"EUR")}</small></button>
     ${specTile(c,ym,sa,sp)}
@@ -1526,8 +1545,8 @@ function txRow(t,acc,excluded){
     else if(!acc){ const s=t.kind==="income"?1:-1; amt=`<b class="${t.kind==="income"?"pos":""} ${excluded?"mut":""}">${sfmt(s*t.amount,curOf(t.acc))}</b><small>${excluded?"compris dans le total":t.kind==="income"?"revenu":t.bulk?"total du mois":NATURE_L[t.nature]||"fixe"}${t.link&&!excluded?" · prévu":""}</small>`; }
     meta=`${shortDate(t.date)} · ${RF?"déduit de ":""}${catLabel(t.cat,t.sub,t.sub2)} · ${accName(t.acc)}${t.kind!=="income"&&!RF&&personLabel(t)?" · "+personLabel(t):""}`;
   }
-  const color=t.kind==="transfer"?accColor(t.to):accColor(t.acc);
-  return `<button class="row" data-act="editTx" data-id="${t.id}"><span class="cdot" style="--c:${color}"></span><div class="main"><div class="l">${esc(t.label)}</div><div class="m">${esc(meta)}</div></div><div class="amt">${amt}</div></button>`;
+  const color=t.kind==="transfer"?accColor(t.to):accColor(t.acc), lead=t.kind==="expense"&&!RF&&!t.bulk?natIcon(natOf(t),t.acc):`<span class="cdot" style="--c:${color}"></span>`;
+  return `<button class="row" data-act="editTx" data-id="${t.id}">${lead}<div class="main"><div class="l">${esc(t.label)}</div><div class="m">${esc(meta)}</div></div><div class="amt">${amt}</div></button>`;
 }
 
 function yearData(y){
@@ -1859,9 +1878,9 @@ function sheetWizard(s){
       ${[["expense",I.out,"Dépense","Achat, prélèvement, facture"],["income",I.in,"Revenu","Salaire, allocations"],["refund",I.in,"Remboursement d'une dépense","Covoiturage, part payée par un proche : réduit la dépense au lieu de compter comme revenu"],["transfer",I.swap,"Virement","Entre tes comptes, change CHF → €, espèces"]].map(([v,ic,b,t])=>`<button class="tile ${(v==="refund"?!!d.refund:d.kind===v&&!d.refund)?"on":""}" data-act="wz" data-f="kind" data-v="${v}"><span class="ic">${ic}</span><div><b>${b}</b><span>${t}</span></div></button>`).join("")}</div>`;
   } else if(step==="nature"){
     h+=`<div class="q">Fixe ou variable ?</div><div class="tiles">
-      <button class="tile ${d.nature==="fixe"?"on":""}" data-act="wz" data-f="nature" data-v="fixe"><span class="ic">${I.fixed}</span><div><b>Fixe</b><span>Montant régulier : loyer, assurance, abonnement</span></div></button>
-      <button class="tile ${d.nature==="variable"?"on":""}" data-act="wz" data-f="nature" data-v="variable"><span class="ic">${I.wave}</span><div><b>Variable</b><span>Au fil du mois : courses, essence, sorties</span></div></button>
-      <button class="tile ${d.nature==="special"?"on":""}" data-act="wz" data-f="nature" data-v="special"><span class="ic">${I.spark}</span><div><b>Spéciale</b><span>Noël, anniversaires, événements (mariage, vacances…)</span></div></button></div>`;
+      <button class="tile ${d.nature==="fixe"?"on":""}" data-act="wz" data-f="nature" data-v="fixe">${natIcon("fixe")}<div><b>Fixe</b><span>Revient à date fixe, même montant : loyer, assurance, abonnement</span></div></button>
+      <button class="tile ${d.nature==="variable"?"on":""}" data-act="wz" data-f="nature" data-v="variable">${natIcon("variable")}<div><b>Variable</b><span>Un budget dépensé au fil du mois : courses, essence, sorties</span></div></button>
+      <button class="tile ${d.nature==="special"?"on":""}" data-act="wz" data-f="nature" data-v="special">${natIcon("special")}<div><b>Spéciale</b><span>Noël, anniversaires, événements (mariage, vacances…)</span></div></button></div>`;
   } else if(step==="cat"){
     h+=`<div class="q">${d.refund?"Ça rembourse quelle dépense ?":d.kind==="income"?"Quelle catégorie de revenu ?":"Quelle catégorie de dépense ?"}</div>${d.refund?`<p class="note" style="margin:-6px 0 10px">Le montant sera déduit de cette catégorie : tu verras ce qui reste vraiment à ta charge.</p>`:""}<p class="note" style="margin:-6px 0 10px">Appui long sur une catégorie pour la déplacer.</p><div class="cgrid">${((L,cur)=>cur&&!L.includes(cur)?L.concat([cur]):L)(d.refund?catsOf("expense"):catsOf(d.kind,d.kind==="expense"?d.nature:null),catByName(d.cat)).map(c=>`<button class="cbtn ${d.cat===c.name?"on":""}" data-sid="${c.id}" data-act="wz" data-f="cat" data-v="${esc(c.name)}">${esc(c.name)}${c.subs.length?`<small>${c.subs.length} sous-catégorie${c.subs.length>1?"s":""}</small>`:c.special?`<small>${c.special==="birthday"?"prénom et âge":"budget par personne"}</small>`:""}</button>`).join("")}</div>
       <div style="display:flex;gap:8px;margin-top:12px">${inp("newCat","text",'placeholder="Nouvelle catégorie"')}<button class="btn" data-act="wzNewCat">Créer</button></div>`;
@@ -2182,15 +2201,24 @@ function sheetCatDetail(s){
   let h=sheetHead(esc(s.cat),`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
   if(R>0.004) h+=refundBox(A+R,R,A,"ce mois-ci");
   h+=`<div class="sumgrid"><div><span>${R>0.004?"Ta part":"Dépensé"}</span><b>${fmt(A,"EUR")}</b></div><div><span>Budget</span><b>${fmt(P,"EUR")}</b></div><div><span>Reste</span><b class="${P-A<0?"neg":""}">${fmt(P-A,"EUR")}</b></div><div><span>Opérations</span><b>${txs.length}</b></div></div>`;
-  { const tab=isSpecialCat(catByName(s.cat))?"special":"variable", pr=prevRows(s.ym,tab).filter(r=>r.cat===s.cat);
-    if(!s.d){ s.d={scope:"month"}; s.init={}; }
-    pr.forEach(r=>{ const k="e:"+r.key; if(!(k in s.init)){ s.d[k]=r.est!=null?numStr(r.est):""; s.init[k]=s.d[k]; } });
-    h+=`<h4>Prévision de ce mois</h4>`;
-    if(pr.length){ h+=`<div class="card pad" style="padding-top:2px;padding-bottom:6px">${pr.map(r=>`<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.sub&&subOf(r.cat,r.sub)?catLabel(r.cat,r.sub,r.sub2).split(" › ").slice(1).join(" › ")+" · "+accName(r.acc):accName(r.acc))}</b><small>${r.skipped?"pas ce mois-ci":r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""}</small></div><div class="pcol">${r.skipped?`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">Rétablir</button>`:inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(accName(r.acc))}"`)}</div></div>`).join("")}
-      ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer la prévision</button></div>`; }
-    else h+=`<p class="note">Aucun budget variable prévu pour ${esc(s.cat)} ce mois-ci.</p><div class="actions" style="margin-top:6px"><button class="btn primary block" data-act="prevForCat" data-cat="${esc(s.cat)}">Prévoir un budget pour ${esc(s.cat)}</button></div>`;
-    const fx=c.pointRows.filter(r=>r.o.p.kind==="expense"&&!r.o.p.refund&&(r.o.p.nature||"fixe")==="fixe"&&r.o.p.cat===s.cat).reduce((x,r)=>x+conv(r.planned,r.cur,c.rP),0);
-    if(fx>0.004) h+=`<p class="note">Dépenses fixes prévues dans ${esc(s.cat)} : ${fmt(fx,"EUR")}. Elles ne comptent pas dans cette jauge (elles sont dans la tuile Dépenses fixes).</p>`; }
+  { const C0=catByName(s.cat), spc=isSpecialCat(C0), vt=spc?"special":"variable";
+    const rows=prevRows(s.ym,"fixe").filter(r=>r.cat===s.cat).map(r=>Object.assign(r,{nat:"fixe"})).concat(prevRows(s.ym,vt).filter(r=>r.cat===s.cat).map(r=>Object.assign(r,{nat:vt})));
+    if(!s.d) s.d={}; if(!s.init) s.init={};
+    const d=s.d; if(!d.scope) d.scope="month"; if(!d.nNat) d.nNat=vt; if(!d.nAcc) d.nAcc=(C0&&C0.acc&&accById(C0.acc))?C0.acc:(eurMain()||cfg.accounts[0].id); if(!d.nScope) d.nScope="month";
+    rows.forEach(r=>{ const k="e:"+r.key; if(!(k in s.init)){ d[k]=r.est!=null?numStr(r.est):""; s.init[k]=d[k]; } });
+    const sum=n=>rows.filter(r=>r.nat===n&&!r.skipped).reduce((x,r)=>x+conv(r.planned,r.cur,c.rP),0), sF=sum("fixe"), sV=sum(vt);
+    h+=`<h4>Prévisions de ${esc(s.cat)} · ${monthName(s.ym)}</h4>`;
+    h+=`<div class="npsum"><div class="f">Fixes<b>${fmt(sF,"EUR")}</b></div><div class="${spc?"s":"v"}">${spc?"Spéciales":"Variables"}<b>${fmt(sV,"EUR")}</b></div><div class="t">Total<b>${fmt(sF+sV,"EUR")}</b></div></div>`;
+    if(rows.length){ h+=`<div class="card pad" style="padding-top:2px;padding-bottom:6px">${rows.map(r=>{
+      const name=r.sub&&subOf(r.cat,r.sub)?catLabel(r.cat,r.sub,r.sub2).split(" › ").slice(1).join(" › "):r.monthOnly?"Toute la catégorie":r.label;
+      const meta=[accName(r.acc),r.date?"le "+shortDate(r.date):"",r.skipped?"pas ce mois-ci":r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""].filter(Boolean).join(" · ");
+      const canSw=!spc&&!r.virtual||(!spc&&r.monthOnly);
+      return `<div class="vrow prow ${r.skipped?"skip":""}"><div><div class="nbl">${natBadge(r.nat,canSw?`data-act="catNat" data-key="${esc(r.key)}" aria-label="Passer en ${r.nat==="fixe"?"variable":"fixe"}"`:"")}</div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(name)}</b><small>${esc(meta)}</small></div>
+        <div class="pcol">${r.skipped?"":inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(name)}"`)}${r.monthOnly?`<button class="lnk" data-act="prevDel" data-key="${esc(r.key)}">Retirer</button>`:`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">${r.skipped?"Rétablir":"Pas ce mois-ci"}</button>`}</div></div>`; }).join("")}
+      ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer les prévisions</button>${spc?"":`<p class="note" style="margin:8px 0 0">Touche le badge Fixe ou Variable pour changer le type. La jauge ne compte que les variables.</p>`}</div>`; }
+    else h+=`<p class="note">Rien de prévu pour ${esc(s.cat)} en ${monthName(s.ym)}.</p>`;
+    { const subs=C0&&!spc?(C0.subs||[]):[], sO=subs.find(x=>x.id===d.nSub), subs2=sO&&Array.isArray(sO.subs)?sO.subs:[];
+      h+=`<h4>Ajouter une prévision</h4><div class="form">${spc?"":fld("Type",segF("nNat",[["fixe","Fixe"],["variable","Variable"]]))}${subs.length?`<div class="grid2">${fld("Sous-catégorie",sel("nSub",[["","Aucune"]].concat(subs.map(x=>[x.id,x.name]))))}${subs2.length?fld("Précision",sel("nSub2",[["","Aucune"]].concat(subs2.map(x=>[x.id,x.name])))):"<div></div>"}</div>`:""}<div class="grid2">${fld("Compte",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}${fld("Montant",inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}</div>${fld("Pour quand ?",segF("nScope",[["month","Ce mois-ci"],["all","Tous les mois"]]),d.nScope==="all"?"Crée un événement prévu, chaque mois à partir de "+monthName(s.ym)+".":"Seulement pour "+monthName(s.ym)+".")}${s.err2?`<div class="err" role="alert">${esc(s.err2)}</div>`:""}<button class="btn" data-act="catAdd">Ajouter</button></div>`; } }
   { const G=subGroups(c,s.cat,null,txs);
     if(G.length&&!(G.length===1&&!G[0].id)){ const budg=G.some(g=>g.id&&g.p>0), mx=Math.max(1,...G.map(g=>g.a));
       if(!budg) G.forEach(g=>{ if(!g.id) g.name="Sans sous-catégorie"; });
@@ -2431,7 +2459,7 @@ function sheetPlans(s){
     h+=`<div class="actions"><button class="btn primary block" data-act="newPlan">Créer un événement</button></div>`; return h; }
   groups.filter(g=>!s.group||g.k===s.group).forEach(({t,f})=>{ const list=cfg.plans.filter(f); if(!list.length) return;
     h+=`<div class="plgrp"><h4>${t}</h4><div class="card list">${list.map(p=>{ const a=p.kind==="transfer"?p.from:p.acc, fq=freqOf(p.freq);
-      return `<button class="row" data-act="editPlan" data-id="${p.id}" data-q="${esc(planHay(p))}"><span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span><div class="main"><div class="l">${esc(p.label)}</div><div class="m">${esc(fq[1]+(FREQ_STEP[p.freq]?(p.noDate?" · sans date":" · le "+(+p.date.slice(8))):"")+" · "+(p.kind==="transfer"?accName(p.from)+" → "+accName(p.to):accName(p.acc)))}</div></div><div class="amt"><b>${fmt(p.amount,curOf(a))}</b></div></button>`; }).join("")}</div></div>`; });
+      return `<button class="row" data-act="editPlan" data-id="${p.id}" data-q="${esc(planHay(p))}">${p.kind==="expense"&&!p.refund?natIcon(natOf(p),p.acc):`<span class="cdot" style="--c:${accColor(p.kind==="transfer"?p.to:p.acc)}"></span>`}<div class="main"><div class="l">${esc(p.label)}</div><div class="m">${esc(fq[1]+(FREQ_STEP[p.freq]?(p.noDate?" · sans date":" · le "+(+p.date.slice(8))):"")+" · "+(p.kind==="transfer"?accName(p.from)+" → "+accName(p.to):accName(p.acc)))}</div></div><div class="amt"><b>${fmt(p.amount,curOf(a))}</b></div></button>`; }).join("")}</div></div>`; });
   const vs=[]; cfg.categories.filter(c=>c.special==="birthday"||c.special==="christmas").forEach(c=>c.subs.forEach(x=>vs.push({c,x})));
   if(vs.length&&(!s.group||s.group==="gift")) h+=`<div class="plgrp"><h4>Anniversaires et Noël</h4><div class="card list">${vs.map(({c,x})=>{ const bd=c.special==="birthday", nb=bd?nextBirthday(x.birth):null;
     return `<button class="row" data-act="editSub" data-cat="${c.id}" data-id="${x.id}" data-q="${esc(norm([bd?"anniversaire":"noel",x.name,c.name,accName(c.acc||"cc"),x.birth?shortDate(x.birth):"",String(+x.budget||0),fmt(+x.budget||0,"EUR"),x.gift||""].join(" ")))}"><span class="cdot" style="--c:${accColor(c.acc||"cc")}"></span><div class="main"><div class="l">${bd?"Anniversaire ":"Noël "}${esc(x.name)}</div><div class="m">${bd?(nb?`le ${shortDate(x.birth)} · ${ageOn(x.birth,nb)} ans en ${nb.slice(0,4)}`:"date de naissance à compléter"):"chaque année en décembre"}${x.gift?" · cadeau : "+esc(x.gift):""} · ${esc(c.name)}</div></div><div class="amt"><b>${fmt(+x.budget||0,"EUR")}</b><small>${+x.budget>0?"budget":"sans budget"}</small></div></button>`; }).join("")}</div></div>`;
@@ -2656,6 +2684,17 @@ document.addEventListener("click",async e=>{
     case "openPrevSpace": if(loading()) break; openPrevSpace(); break;
     case "prevGo": prevGoto(s,addMonths(s.ym,+a.dataset.d)); break;
     case "prevForCat": { const cat=a.dataset.cat, ym=s.ym; openPrev(isSpecialCat(catByName(cat))?"special":"variable",ym); const t=topS(); if(t&&t.type==="prev"){ t.d.nCat=cat; renderSheet(); setTimeout(()=>{ const el=document.querySelector('#sheet [data-f="nAmt"]'); if(el) el.scrollIntoView({block:"center",behavior:"smooth"}); },80); } break; }
+    case "catAdd": { const d=s.d, v=num(d.nAmt), cat=s.cat, C0=catByName(cat), spc=isSpecialCat(C0), ym=s.ym;
+      if(!(v>0)){ s.err2="Indique un montant."; renderSheet(); break; } s.err2="";
+      const sub=!spc&&subOf(cat,d.nSub)?d.nSub:"", sub2=sub&&sub2Of(cat,sub,d.nSub2)?d.nSub2:"", nat=spc?"special":(d.nNat==="fixe"?"fixe":"variable"), lbl=catLabel(cat,sub,sub2);
+      if(C0&&!spc&&catUse(C0)!=="both"&&catUse(C0)!==nat) C0.use="both";
+      if(nat!=="fixe"&&d.nScope!=="all"){ cfg.varEst=cfg.varEst||{}; const m=cfg.varEst[ym]=cfg.varEst[ym]||{}, k=estKey(cat,d.nAcc,sub,sub2); m[k]=r2((+m[k]||0)+v); d["e:"+k]=numStr(m[k]); s.init["e:"+k]=d["e:"+k]; }
+      else { const p={id:uid8(),kind:"expense",nature:nat,label:lbl,amount:r2(v),acc:d.nAcc,cat,sub,sub2,freq:d.nScope==="all"?"monthly":"once",date:nat==="fixe"?(ym===CUR_YM?TODAY:ym+"-01"):ym+"-01",persons:[]}; if(nat!=="fixe") p.noDate=true; cfg.plans.push(p); }
+      d.nAmt=""; changed(["config"]); renderSheet(); toast(`${nat==="fixe"?"Dépense fixe":nat==="special"?"Dépense spéciale":"Budget variable"} ajouté${nat==="fixe"?"e":""}${d.nScope==="all"?", tous les mois":""}`); break; }
+    case "catNat": { const k=a.dataset.key, ym=s.ym, p=cfg.plans.find(x=>x.id===k);
+      if(p){ const to=natOf(p)==="fixe"?"variable":"fixe"; p.nature=to; if(to==="variable"&&!p.date) p.date=ym+"-01"; const C0=catByName(p.cat); if(C0&&!isSpecialCat(C0)&&catUse(C0)!=="both"&&catUse(C0)!==to) C0.use="both"; toast(`${p.label} : maintenant ${to==="fixe"?"fixe":"variable"}, tous les mois`); }
+      else if(k.startsWith("c:")){ const m=(cfg.varEst||{})[ym], o=estKeyParse(k); if(m&&m[k]!=null){ cfg.plans.push({id:uid8(),kind:"expense",nature:"fixe",label:catLabel(o.cat,o.sub,o.sub2),amount:r2(+m[k]),acc:o.acc,cat:o.cat,sub:o.sub,sub2:o.sub2,freq:"once",date:ym===CUR_YM?TODAY:ym+"-01",persons:[]}); delete m[k]; if(!Object.keys(m).length) delete cfg.varEst[ym]; delete s.d["e:"+k]; delete s.init["e:"+k]; const C0=catByName(o.cat); if(C0&&catUse(C0)==="variable") C0.use="both"; toast("Passée en dépense fixe pour "+monthName(ym)); } }
+      changed(["config"]); renderSheet(); break; }
     case "catSub": s.openSub=s.openSub===a.dataset.sub?null:a.dataset.sub; renderSheet(); break;
     case "prevAdj": s.d["e:"+a.dataset.key]=numStr(+a.dataset.v); renderSheet(); break;
     case "prevCopy": prevCopy(s); break;
@@ -2957,6 +2996,7 @@ document.addEventListener("change",e=>{
       else if(f==="freq") renderSheet();
       else if(f==="date"&&s.d.mode==="tx"&&s.d.link&&!s.d.link.includes("@"+s.d.date.slice(0,7))){ s.d.link=""; renderSheet(); }
     }
+    if(s.type==="catDetail"&&(f==="nSub")){ s.d.nSub2=""; renderSheet(); return; }
     if(s.type==="prev"&&(f==="nCat"||f==="nSub"||f==="nAcc")){ if(f==="nCat"){ s.d.nSub=""; s.d.nSub2=""; } if(f==="nSub") s.d.nSub2=""; renderSheet(); return; }
     if(s.type==="catEdit"&&f==="acc"){ const c=cfg.categories.find(x=>x.id===s.id); if(c){ c.acc=t.value; changed(["config"]); toast("Compte par défaut enregistré"); } }
     return;
@@ -3188,7 +3228,7 @@ function sheetRecent(s){
   if(!L.length) return h+`<p class="note">Aucune opération saisie pour l'instant.</p>`;
   h+=`<div class="card list">${L.map(t=>{ const isT=t.kind==="transfer", cur=curOf(isT?t.from:t.acc), amt=isT?t.amtFrom:t.amount;
     const meta=[shortDate(t.date)+(t.date.slice(0,4)!==TODAY.slice(0,4)?" "+t.date.slice(0,4):""),isT?accName(t.from)+" → "+accName(t.to):accName(t.acc),!isT&&t.cat?catLabel(t.cat,t.sub,t.sub2):"",t.ts?"enregistré "+(new Date(t.ts).toISOString().slice(0,10)===TODAY?"aujourd'hui":shortDate(new Date(t.ts).toISOString().slice(0,10))):""].filter(Boolean).join(" · ");
-    return `<div class="rrow"><button class="row" data-act="editTx" data-id="${t.id}"><span class="cdot" style="--c:${accColor(isT?t.from:t.acc)}"></span><div class="main"><div class="l">${esc(t.label||t.cat||"Opération")}</div><div class="m">${esc(meta)}</div></div><div class="amt"><b class="${t.kind==="income"?"pos":""}">${t.kind==="income"?"+":isT?"":"−"}${fmt(amt,cur)}</b><small>${t.kind==="income"?"revenu":isT?"virement":NATURE_L[t.nature]||"fixe"}${t.link?" · prévu":""}</small></div></button><button class="mini" data-act="recentDel" data-id="${t.id}" aria-label="Effacer ${esc(t.label||"")}">${I.trash}</button></div>`; }).join("")}</div>`;
+    return `<div class="rrow"><button class="row" data-act="editTx" data-id="${t.id}">${t.kind==="expense"&&!isRefund(t)&&!t.bulk?natIcon(natOf(t),t.acc):`<span class="cdot" style="--c:${accColor(isT?t.from:t.acc)}"></span>`}<div class="main"><div class="l">${esc(t.label||t.cat||"Opération")}</div><div class="m">${esc(meta)}</div></div><div class="amt"><b class="${t.kind==="income"?"pos":""}">${t.kind==="income"?"+":isT?"":"−"}${fmt(amt,cur)}</b><small>${t.kind==="income"?"revenu":isT?"virement":NATURE_L[t.nature]||"fixe"}${t.link?" · prévu":""}</small></div></button><button class="mini" data-act="recentDel" data-id="${t.id}" aria-label="Effacer ${esc(t.label||"")}">${I.trash}</button></div>`; }).join("")}</div>`;
   if(all.length>n) h+=`<div class="actions"><button class="btn block" data-act="recentMore">10 de plus</button></div>`;
   return h;
 }
@@ -3262,7 +3302,7 @@ function sheetPrev(s){
   if(!rows.length) h+=`<p class="note">${tab==="transfer"?"Aucun virement prévu ce mois-ci.":`Aucune dépense ${tab==="fixe"?"fixe":tab==="variable"?"variable":"spéciale"} prévue ce mois-ci.`}</p>`;
   else h+=`<div class="card pad" style="padding-top:2px;padding-bottom:2px">${rows.map(r=>{
     const meta=[r.to?accName(r.acc)+" → "+accName(r.to):accName(r.acc),r.date?"le "+shortDate(r.date):"",r.monthOnly?"ce mois-ci seulement":r.base!=null?"habituel "+fmt(r.base,r.cur):""].filter(Boolean).join(" · ");
-    return `<div class="vrow prow ${r.skipped?"skip":""}"><div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(r.label)}</b><small>${esc(meta)}</small>${r.skipped?`<small class="neg">pas ce mois-ci</small>`:""}${tab==="variable"&&!r.skipped?(()=>{ const L=prevLast(ym,r); return L?`<div class="plast"><span>Mois dernier${L.rest?" (le reste)":""} : prévu ${fmt(L.planned,r.cur)} · réel ${fmt(L.actual,r.cur)}</span>${L.actual>0?`<button class="lnk" data-act="prevAdj" data-key="${esc(r.key)}" data-v="${r2(L.actual)}">Ajuster</button>`:""}</div>`:""; })():""}</div>
+    return `<div class="vrow prow ${r.skipped?"skip":""}"><div><b>${tab==="transfer"?`<span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>`:natIcon(tab,r.acc,true)}${esc(r.label)}</b><small>${esc(meta)}</small>${r.skipped?`<small class="neg">pas ce mois-ci</small>`:""}${tab==="variable"&&!r.skipped?(()=>{ const L=prevLast(ym,r); return L?`<div class="plast"><span>Mois dernier${L.rest?" (le reste)":""} : prévu ${fmt(L.planned,r.cur)} · réel ${fmt(L.actual,r.cur)}</span>${L.actual>0?`<button class="lnk" data-act="prevAdj" data-key="${esc(r.key)}" data-v="${r2(L.actual)}">Ajuster</button>`:""}</div>`:""; })():""}</div>
       <div class="pcol">${r.skipped?"":inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(r.label)}"`)}${r.monthOnly?`<button class="lnk" data-act="prevDel" data-key="${esc(r.key)}">Retirer</button>`:`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">${r.skipped?"Rétablir":"Pas ce mois-ci"}</button>`}</div></div>`; }).join("")}</div>`;
   if(s.err) h+=`<div class="err" role="alert">${esc(s.err)}</div>`;
   h+=`<div class="actions"><button class="btn primary block" data-act="prevSave" data-stay="1">Enregistrer les prévisions</button><button class="btn block" data-act="prevCopy">Copier ${monthName(addMonths(ym,-1)).toLowerCase()}</button></div>`;
