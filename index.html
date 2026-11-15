@@ -656,7 +656,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.6 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.7 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -684,7 +684,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.6";
+const VERSION = "5.7";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -1443,7 +1443,7 @@ function viewMonth(){
   const trA=sumA(tr)+trUn.reduce((x,t)=>x+conv(t.amtFrom,curOf(t.from),c.rA),0), trLate=tr.filter(r=>r.late).length, xf=chfTransfers(c);
   const mini=(a,p,col)=>`<span class="mini"><i data-w="${p>0?Math.min(100,a/p*100).toFixed(1):(a>0?100:0)}" style="background:${a>p&&p>0?"var(--neg)":col}"></i></span>`;
   // barres variables triées
-  const cats={}; vRows.forEach(v=>{ const k=v.cat; const o=cats[k]=cats[k]||{cat:k,p:0,a:0}; o.p+=conv(v.planned,curOf(v.acc),c.rP); o.a+=conv(v.actual,curOf(v.acc),c.rA); });
+  const cats={}; gaugeCats(c).forEach(o=>{ cats[o.cat]=o; });
   const list=Object.values(cats).map(o=>Object.assign(o,{pct:o.p>0?o.a/o.p:(o.a>0?9.99:0)})).sort((a,b)=>b.pct-a.pct);
   const pages=[]; for(let i=0;i<list.length;i+=3) pages.push(list.slice(i,i+3));
   const barCol=p=>p>1?"var(--neg)":p>.85?"var(--ochre)":"var(--pos)";
@@ -2177,11 +2177,15 @@ function refundBox(gross,ref,net,when,avg){
   return `<div class="card pad rfbox"><div class="eyebrow">Ce qui reste à ta charge ${when}</div><div class="big" style="font-size:30px">${fmt(net,"EUR")}</div>
     <div class="sumgrid" style="margin:8px 0 0"><div><span>Facturé</span><b>${fmt(gross,"EUR")}</b></div><div><span>Remboursé</span><b class="pos">− ${fmt(ref,"EUR")}</b></div>${avg!=null?`<div><span>Moyenne par mois</span><b>${fmt(avg,"EUR")}</b></div><div><span>Part remboursée</span><b>${gross>0?Math.round(ref/gross*100):0} %</b></div>`:""}</div></div>`;
 }
+function gaugeCats(c){ // une jauge par catégorie avec du variable (ou réglée fixe + variable) : fixes + variables
+  const names=new Set(c.varRows.filter(v=>!isSpecialCat(catByName(v.cat))).map(v=>v.cat));
+  cfg.categories.filter(x=>catType(x)==="expense"&&!isSpecialCat(x)&&catUse(x)!=="fixe"&&((c.P.cats[x.name]||0)>0.004||(c.A.cats[x.name]||0)>0.004)).forEach(x=>names.add(x.name));
+  return [...names].map(cat=>({cat,p:Math.max(0,c.P.cats[cat]||0),a:Math.max(0,c.A.cats[cat]||0)})); }
 function subGroups(c,cat,sub,txs){ // par sous-catégorie (sub null) ou par précision dans une sous-catégorie
   const C=catByName(cat), list=sub?((subOf(cat,sub)||{}).subs||[]):(C&&C.subs)||[], g={};
   const key=o=>{ if(sub&&(o.sub||"")!==sub) return null; const id=sub?(o.sub2||""):(o.sub||""); return list.some(x=>x.id===id)?id:""; };
   const get=k=>g[k]=g[k]||{id:k,p:0,a:0};
-  c.occ.filter(o=>isVarExp(o.p)&&o.p.cat===cat).forEach(o=>{ const k=key(o.p); if(k!=null) get(k).p+=conv(o.amount!=null?o.amount:o.p.amount,curOf(o.p.acc),c.rP); });
+  c.occ.filter(o=>o.p.kind==="expense"&&!o.p.refund&&o.p.cat===cat).forEach(o=>{ const k=key(o.p); if(k!=null) get(k).p+=conv(o.amount!=null?o.amount:o.p.amount,curOf(o.p.acc),c.rP); });
   txs.forEach(t=>{ const k=key(t); if(k!=null) get(k).a+=conv(t.amount,curOf(t.acc),c.rA); });
   const out=list.filter(x=>g[x.id]&&(g[x.id].p||g[x.id].a)).map(x=>Object.assign(g[x.id],{name:x.name}));
   const budg=out.some(x=>x.p>0);
@@ -2195,7 +2199,7 @@ function subGauge(g,canOpen,open,simple){
   return `<${tag} class="catbar sg ${canOpen?"open-able":""}"><b style="font-weight:700">${esc(g.name)}${canOpen?` <span class="mut">${open?"▾":"▸"}</span>`:""}</b><span>${fmt(g.a,"EUR")}${simple?"":` <span class="mut">/ ${g.p>0?fmt(g.p,"EUR"):g.inRest?"dans le reste":"pas de budget"}</span>`}</span><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${col}"></i></div></${canOpen?"button":"div"}>`; }
 function sheetCatDetail(s){
   const c=calcMonth(s.ym), rows=c.varRows.filter(v=>v.cat===s.cat);
-  const P=rows.reduce((x,v)=>x+conv(v.planned,curOf(v.acc),c.rP),0);
+  const P=isSpecialCat(catByName(s.cat))?rows.reduce((x,v)=>x+conv(v.planned,curOf(v.acc),c.rP),0):Math.max(0,c.P.cats[s.cat]||0);
   const txs=c.tx.filter(t=>t.kind==="expense"&&t.cat===s.cat).sort((a,b)=>a.date<b.date?1:-1);
   const A=txs.reduce((x,t)=>x+conv(t.amount,curOf(t.acc),c.rA),0), R=c.A.catRef[s.cat]||0;
   let h=sheetHead(esc(s.cat),`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
@@ -2215,7 +2219,7 @@ function sheetCatDetail(s){
       const canSw=!spc&&!r.virtual||(!spc&&r.monthOnly);
       return `<div class="vrow prow ${r.skipped?"skip":""}"><div><div class="nbl">${natBadge(r.nat,canSw?`data-act="catNat" data-key="${esc(r.key)}" aria-label="Passer en ${r.nat==="fixe"?"variable":"fixe"}"`:"")}</div><b><span class="cdot" style="--c:${accColor(r.acc)};margin-right:6px"></span>${esc(name)}</b><small>${esc(meta)}</small></div>
         <div class="pcol">${r.skipped?"":inp("e:"+r.key,"text",`inputmode="decimal" placeholder="${numStr(r.base!=null?r.base:r.planned)}" aria-label="Prévision ${esc(name)}"`)}${r.monthOnly?`<button class="lnk" data-act="prevDel" data-key="${esc(r.key)}">Retirer</button>`:`<button class="lnk" data-act="prevSkip" data-key="${esc(r.key)}">${r.skipped?"Rétablir":"Pas ce mois-ci"}</button>`}</div></div>`; }).join("")}
-      ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer les prévisions</button>${spc?"":`<p class="note" style="margin:8px 0 0">Touche le badge Fixe ou Variable pour changer le type. La jauge ne compte que les variables.</p>`}</div>`; }
+      ${fld("Les montants changés valent pour",segF("scope",[["month","Ce mois-ci"],["all","Tous les mois"]]))}${s.err?`<div class="err" role="alert">${esc(s.err)}</div>`:""}<button class="btn primary block" data-act="catPrevSave">Enregistrer les prévisions</button>${spc?"":`<p class="note" style="margin:8px 0 0">Touche le badge Fixe ou Variable pour changer le type. Le budget de la jauge compte les fixes et les variables.</p>`}</div>`; }
     else h+=`<p class="note">Rien de prévu pour ${esc(s.cat)} en ${monthName(s.ym)}.</p>`;
     { const subs=C0&&!spc?(C0.subs||[]):[], sO=subs.find(x=>x.id===d.nSub), subs2=sO&&Array.isArray(sO.subs)?sO.subs:[];
       h+=`<h4>Ajouter une prévision</h4><div class="form">${spc?"":fld("Type",segF("nNat",[["fixe","Fixe"],["variable","Variable"]]))}${subs.length?`<div class="grid2">${fld("Sous-catégorie",sel("nSub",[["","Aucune"]].concat(subs.map(x=>[x.id,x.name]))))}${subs2.length?fld("Précision",sel("nSub2",[["","Aucune"]].concat(subs2.map(x=>[x.id,x.name])))):"<div></div>"}</div>`:""}<div class="grid2">${fld("Compte",sel("nAcc",cfg.accounts.map(a=>[a.id,a.name])))}${fld("Montant",inp("nAmt","text",'inputmode="decimal" placeholder="0"'))}</div>${fld("Pour quand ?",segF("nScope",[["month","Ce mois-ci"],["all","Tous les mois"]]),d.nScope==="all"?"Crée un événement prévu, chaque mois à partir de "+monthName(s.ym)+".":"Seulement pour "+monthName(s.ym)+".")}${s.err2?`<div class="err" role="alert">${esc(s.err2)}</div>`:""}<button class="btn" data-act="catAdd">Ajouter</button></div>`; } }
@@ -3328,10 +3332,10 @@ function prevSave(s,stay){
 }
 function sheetGauges(s){
   const c=calcMonth(s.ym), cats={};
-  c.varRows.filter(v=>!isSpecialCat(catByName(v.cat))).forEach(v=>{ const o=cats[v.cat]=cats[v.cat]||{cat:v.cat,p:0,a:0}; o.p+=conv(v.planned,curOf(v.acc),c.rP); o.a+=conv(v.actual,curOf(v.acc),c.rA); });
+  gaugeCats(c).forEach(o=>{ cats[o.cat]=o; });
   const list=Object.values(cats).map(o=>Object.assign(o,{pct:o.p>0?o.a/o.p:(o.a>0?9.99:0)})).sort((a,b)=>b.pct-a.pct);
   const col=p=>p>1?"var(--neg)":p>.85?"var(--ochre)":"var(--pos)";
-  let h=sheetHead("Jauges des variables",`${monthName(s.ym)} ${s.ym.slice(0,4)} · touche une jauge pour le détail`);
+  let h=sheetHead("Jauges des variables",`${monthName(s.ym)} ${s.ym.slice(0,4)} · fixes et variables de chaque catégorie · touche une jauge pour le détail`);
   if(!list.length) return h+`<p class="note">Aucune dépense variable ce mois-ci.</p><div class="actions"><button class="btn block" data-act="openPrev" data-tab="variable">Prévoir les dépenses variables</button></div>`;
   h+=`<div class="card pad"><div class="ggrid">${list.map(o=>`<button class="vcol gcol" data-act="openCatDetail" data-cat="${esc(o.cat)}"><span class="vpc" style="color:${col(o.pct)}">${o.pct>=9.99?"hors budget":Math.round(o.pct*100)+" %"}</span><span class="vbar"><i class="vf" style="height:${Math.min(100,o.pct*100).toFixed(1)}%;background:${col(o.pct)}"></i></span><span class="vlb">${esc(o.cat)}</span><small>${fmt(o.a,"EUR",0)} / ${fmt(o.p,"EUR",0)}</small></button>`).join("")}</div>
     <div class="legend" style="padding:10px 0 0"><span><i style="background:var(--pos)"></i>dans le budget</span><span><i style="background:var(--ochre)"></i>plus de 85 %</span><span><i style="background:var(--neg)"></i>dépassé</span></div></div>`;
