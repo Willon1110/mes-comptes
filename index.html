@@ -669,7 +669,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.12 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.13 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -697,7 +697,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.12";
+const VERSION = "5.13";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -2219,9 +2219,22 @@ function subGauge(g,canOpen,open,simple){
   if(simple||!(g.p>0)){ pct=g.a/(simple||g.scale||Math.max(g.a,1)); col="var(--title)"; }
   const tag=canOpen?`button type="button" data-act="catSub" data-sub="${esc(g.id)}" aria-expanded="${open}"`:"div";
   return `<${tag} class="catbar sg ${canOpen?"open-able":""}"><b style="font-weight:700">${esc(g.name)}${canOpen?` <span class="mut">${open?"▾":"▸"}</span>`:""}</b><span>${fmt(g.a,"EUR")}${simple?"":` <span class="mut">/ ${g.p>0?fmt(g.p,"EUR"):g.inRest?"dans le reste":"pas de budget"}</span>`}</span><div class="bar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${col}"></i></div></${canOpen?"button":"div"}>`; }
+function giftDups(catName){ // doublons dans Anniversaires / Noël : même personne 2 fois, ou événement créé à la main en plus
+  const C=catByName(catName); if(!isGiftCat(C)) return null; const by={}; (C.subs||[]).forEach(x=>{ (by[norm(x.name)]=by[norm(x.name)]||[]).push(x); });
+  const subs=Object.values(by).filter(g=>g.length>1), vids=new Set(virtualPlans().filter(v=>v.cat===C.name).map(v=>v.sub));
+  const plans=cfg.plans.filter(p=>p.kind==="expense"&&p.cat===C.name&&((p.sub&&vids.has(p.sub))||(C.subs||[]).some(x=>vids.has(x.id)&&norm(p.label).includes(norm(x.name)))));
+  return subs.length||plans.length?{C,subs,plans}:null; }
+function fixGiftDups(catName){ const D=giftDups(catName); if(!D) return 0; let n=0; const C=D.C;
+  D.subs.forEach(g=>{ const keep=g.slice().sort((a,b)=>(isISO(b.birth)?1:0)-(isISO(a.birth)?1:0)||(+b.budget||0)-(+a.budget||0))[0];
+    g.filter(x=>x!==keep).forEach(x=>{ if(!keep.gift&&x.gift) keep.gift=x.gift; else if(x.gift&&keep.gift&&!keep.gift.includes(x.gift)) keep.gift+=" · "+x.gift; if(!isISO(keep.birth)&&isISO(x.birth)) keep.birth=x.birth;
+      remapRefs(o=>o.cat===C.name&&o.sub===x.id,o=>{ o.sub=keep.id; }); remapEst(o=>o.cat===C.name&&o.sub===x.id?Object.assign(o,{sub:keep.id}):null); C.subs=C.subs.filter(z=>z!==x); n++; }); });
+  const ids=new Set(D.plans.map(p=>p.id)); if(ids.size){ cfg.plans=cfg.plans.filter(p=>!ids.has(p.id)); n+=ids.size; }
+  return n; }
+function giftDupBanner(cat){ const D=giftDups(cat); if(!D) return ""; const names=[...new Set(D.subs.map(g=>g[0].name).concat(D.plans.map(p=>p.label)))];
+  return `<div class="card pad" style="border:1.5px solid var(--ochre);margin:8px 0 10px"><b>Doublon${names.length>1?"s":""} trouvé${names.length>1?"s":""}</b><p class="note" style="margin:4px 0 8px">${D.subs.length?`${esc(D.subs.map(g=>g[0].name+" ("+g.length+" fois)").join(", "))} : la même personne est enregistrée plusieurs fois dans ${esc(cat)}. `:""}${D.plans.length?`${esc(D.plans.map(p=>p.label).join(", "))} : événement créé à la main en plus du budget de la personne, donc compté deux fois. `:""}</p><button class="btn primary block" data-act="fixGiftDups" data-cat="${esc(cat)}">Fusionner les doublons</button></div>`; }
 function catPrevRows(ym,cat){ const spc=isSpecialCat(catByName(cat)), vt=spc?"special":"variable";
   return prevRows(ym,"fixe").filter(r=>r.cat===cat).map(r=>Object.assign(r,{nat:"fixe"})).concat(prevRows(ym,vt).filter(r=>r.cat===cat).map(r=>Object.assign(r,{nat:vt}))); }
-function sheetCatPrev(s){ const c=calcMonth(s.ym); let h=sheetHead(`Prévisions · ${esc(s.cat)}`,`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
+function sheetCatPrev(s){ const c=calcMonth(s.ym); let h=sheetHead(`Prévisions · ${esc(s.cat)}`,`${monthName(s.ym)} ${s.ym.slice(0,4)}`)+giftDupBanner(s.cat);
   { const C0=catByName(s.cat), spc=isSpecialCat(C0), vt=spc?"special":"variable";
     const rows=catPrevRows(s.ym,s.cat);
     if(!s.d) s.d={}; if(!s.init) s.init={};
@@ -2248,7 +2261,7 @@ function sheetCatDetail(s){
   const P=isSpecialCat(catByName(s.cat))?rows.reduce((x,v)=>x+conv(v.planned,curOf(v.acc),c.rP),0):Math.max(0,c.P.cats[s.cat]||0);
   const txs=c.tx.filter(t=>t.kind==="expense"&&t.cat===s.cat).sort((a,b)=>a.date<b.date?1:-1);
   const A=txs.reduce((x,t)=>x+conv(t.amount,curOf(t.acc),c.rA),0), R=c.A.catRef[s.cat]||0;
-  let h=sheetHead(esc(s.cat),`${monthName(s.ym)} ${s.ym.slice(0,4)}`);
+  let h=sheetHead(esc(s.cat),`${monthName(s.ym)} ${s.ym.slice(0,4)}`)+giftDupBanner(s.cat);
   if(R>0.004) h+=refundBox(A+R,R,A,"ce mois-ci");
   h+=`<div class="sumgrid"><div><span>${R>0.004?"Ta part":"Dépensé"}</span><b>${fmt(A,"EUR")}</b></div><div><span>Budget</span><b>${fmt(P,"EUR")}</b></div><div><span>Reste</span><b class="${P-A<0?"neg":""}">${fmt(P-A,"EUR")}</b></div><div><span>Opérations</span><b>${txs.length}</b></div></div>`;
   { const C0=catByName(s.cat), spc=isSpecialCat(C0), vt=spc?"special":"variable", rows=catPrevRows(s.ym,s.cat), sum=n=>rows.filter(r=>r.nat===n&&!r.skipped).reduce((x,r)=>x+conv(r.planned,r.cur,c.rP),0), sF=sum("fixe"), sV=sum(vt);
@@ -2754,6 +2767,7 @@ document.addEventListener("click",async e=>{
       if(p){ const to=natOf(p)==="fixe"?"variable":"fixe"; p.nature=to; if(to==="variable"&&!p.date) p.date=ym+"-01"; const C0=catByName(p.cat); if(C0&&!isSpecialCat(C0)&&catUse(C0)!=="both"&&catUse(C0)!==to) C0.use="both"; toast(`${p.label} : maintenant ${to==="fixe"?"fixe":"variable"}, tous les mois`); }
       else if(k.startsWith("c:")){ const m=(cfg.varEst||{})[ym], o=estKeyParse(k); if(m&&m[k]!=null){ cfg.plans.push({id:uid8(),kind:"expense",nature:"fixe",label:catLabel(o.cat,o.sub,o.sub2),amount:r2(+m[k]),acc:o.acc,cat:o.cat,sub:o.sub,sub2:o.sub2,freq:"once",date:ym===CUR_YM?TODAY:ym+"-01",persons:[]}); delete m[k]; if(!Object.keys(m).length) delete cfg.varEst[ym]; delete s.d["e:"+k]; delete s.init["e:"+k]; const C0=catByName(o.cat); if(C0&&catUse(C0)==="variable") C0.use="both"; toast("Passée en dépense fixe pour "+monthName(ym)); } }
       changed(["config"]); renderSheet(); break; }
+    case "fixGiftDups": { const cat=a.dataset.cat; askConfirm("Fusionner les doublons ?","Chaque personne ne restera qu'une fois (budget, date et cadeau conservés, dépenses déjà saisies rattachées). Les événements créés à la main en double sont supprimés.","Fusionner",()=>{ const n=fixGiftDups(cat); popSheet(); changed(["config"].concat(Object.keys(TX).map(k=>"tx-"+k))); if(stack.length) renderSheet(); toast(n?`${n} doublon${n>1?"s":""} fusionné${n>1?"s":""}`:"Aucun doublon"); }); break; }
     case "catSub": s.openSub=s.openSub===a.dataset.sub?null:a.dataset.sub; renderSheet(); break;
     case "prevAdj": s.d["e:"+a.dataset.key]=numStr(+a.dataset.v); renderSheet(); break;
     case "prevCopy": prevCopy(s); break;
