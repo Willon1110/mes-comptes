@@ -668,7 +668,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.9 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.10 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -696,7 +696,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.9";
+const VERSION = "5.10";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -2717,10 +2717,10 @@ document.addEventListener("click",async e=>{
     case "openPrevMonths": pushOrOpen({type:"prevMonths"}); break;
     case "openPrevYm": pushOrOpen(prevState("depenses",a.dataset.ym)); break;
     case "openRefundFix": pushOrOpen({type:"refundFix",d:{}}); break;
-    case "rfLink": { const id=a.dataset.id, cat=s.d["c:"+id]; if(!cat){ toast("Choisis la catégorie de la dépense remboursée"); break; } const f=findTx(id), pl=cfg.plans.find(p=>p.id===id);
-      if(f){ const t=TX[f.ym][f.i]; t.refund=true; t.cat=cat; t.sub=""; t.sub2=""; t.nature=""; t.link=""; changed(["tx-"+f.ym]); }
-      else if(pl){ pl.refund=true; pl.cat=cat; pl.sub=""; pl.sub2=""; pl.nature=""; changed(["config"]); }
-      renderSheet(); toast(`Rattaché à ${cat} : déduit de la dépense`); break; }
+    case "rfLink": { const id=a.dataset.id, cat=s.d["c:"+id], sub=subOf(cat,s.d["s:"+id])?s.d["s:"+id]:"", sub2=sub&&sub2Of(cat,sub,s.d["s2:"+id])?s.d["s2:"+id]:""; if(!cat){ toast("Choisis la catégorie de la dépense remboursée"); break; } const f=findTx(id), pl=cfg.plans.find(p=>p.id===id);
+      if(f){ const t=TX[f.ym][f.i]; t.refund=true; t.cat=cat; t.sub=sub; t.sub2=sub2; t.nature=""; t.link=""; changed(["tx-"+f.ym]); }
+      else if(pl){ pl.refund=true; pl.cat=cat; pl.sub=sub; pl.sub2=sub2; pl.nature=""; changed(["config"]); }
+      renderSheet(); toast(`Rattaché à ${catLabel(cat,sub,sub2)} : déduit de la dépense`); break; }
     case "rfKeep": { const id=a.dataset.id, f=findTx(id), pl=cfg.plans.find(p=>p.id===id); if(f){ TX[f.ym][f.i].keepInc=true; changed(["tx-"+f.ym]); } else if(pl){ pl.keepInc=true; changed(["config"]); } renderSheet(); break; }
     case "prepGo": prepGo(s,+a.dataset.d,a.dataset.save==="1"); break;
     case "prepTrfYes": { const t=(s.trf||{})[a.dataset.id]; if(!t) break; const v=num(s.d["t:"+t.id]||"")||t.amtFrom; const day=Math.min(+lastDay(s.ym).slice(8),+t.date.slice(8));
@@ -3059,6 +3059,7 @@ document.addEventListener("change",e=>{
       else if(f==="date"&&s.d.mode==="tx"&&s.d.link&&!s.d.link.includes("@"+s.d.date.slice(0,7))){ s.d.link=""; renderSheet(); }
     }
     if((s.type==="catDetail"||s.type==="catAdd")&&(f==="nSub")){ s.d.nSub2=""; renderSheet(); return; }
+    if(s.type==="refundFix"&&/^(c|s):/.test(f)){ const id=f.slice(2); if(f.startsWith("c:")){ delete s.d["s:"+id]; delete s.d["s2:"+id]; } else delete s.d["s2:"+id]; renderSheet(); return; }
     if((s.type==="prev"||s.type==="prep")&&(f==="nCat"||f==="nSub"||f==="nAcc")){ if(f==="nCat"){ s.d.nSub=""; s.d.nSub2=""; } if(f==="nSub") s.d.nSub2=""; renderSheet(); return; }
     if(s.type==="catEdit"&&f==="acc"){ const c=cfg.categories.find(x=>x.id===s.id); if(c){ c.acc=t.value; changed(["config"]); toast("Compte par défaut enregistré"); } }
     return;
@@ -3438,7 +3439,8 @@ function sheetPrevMonths(){ let h=sheetHead("Prévisions","touche un mois pour v
 function sheetRefundFix(s){ let h=sheetHead("Remboursements à rattacher","pour ne compter que ce que tu as vraiment payé");
   const tx=Object.values(TX).flat().filter(t=>t.kind==="income"&&!t.refund&&!t.keepInc&&/^rembours/i.test(t.cat||"")).sort((a,b)=>a.date<b.date?1:-1), pl=cfg.plans.filter(p=>p.kind==="income"&&!p.refund&&!p.keepInc&&/^rembours/i.test(p.cat||""));
   if(!tx.length&&!pl.length) return h+`<div class="card pad"><p class="note" style="margin:0">Tout est rattaché ✓</p></div>`;
-  const cats=catsOf("expense").map(x=>[x.name,x.name]), row=(o,isPlan)=>`<div class="card pad" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(o.label||"Remboursement")}</b><small style="display:block;color:var(--muted)">${isPlan?"prévu · "+(o.freq==="monthly"?"tous les mois":"une fois"):shortDate(o.date)} · ${esc(accName(o.acc))}</small></div><b class="pos">${fmt(+o.amount||0,curOf(o.acc))}</b></div>${fld("Rembourse une dépense de",sel("c:"+o.id,[["","Choisir…"]].concat(cats)))}<div class="grid2"><button class="btn primary" data-act="rfLink" data-id="${o.id}">Rattacher</button><button class="btn" data-act="rfKeep" data-id="${o.id}">C'est un revenu</button></div></div>`;
+  const cats=catsOf("expense").map(x=>[x.name,x.name]), row=(o,isPlan)=>`<div class="card pad" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(o.label||"Remboursement")}</b><small style="display:block;color:var(--muted)">${isPlan?"prévu · "+(o.freq==="monthly"?"tous les mois":"une fois"):shortDate(o.date)} · ${esc(accName(o.acc))}</small></div><b class="pos">${fmt(+o.amount||0,curOf(o.acc))}</b></div>${fld("Rembourse une dépense de",sel("c:"+o.id,[["","Choisir…"]].concat(cats)))}${(()=>{ const C=catByName(s.d["c:"+o.id]), subs=C&&C.special!=="birthday"&&C.special!=="christmas"?(C.subs||[]):[], so=subs.find(x=>x.id===s.d["s:"+o.id]), subs2=so&&Array.isArray(so.subs)?so.subs:[];
+    return subs.length?`<div class="grid2">${fld(C.special?"Pour qui":"Sous-catégorie",sel("s:"+o.id,[["","Aucune"]].concat(subs.map(x=>[x.id,x.name]))))}${subs2.length?fld("Précision",sel("s2:"+o.id,[["","Aucune"]].concat(subs2.map(x=>[x.id,x.name])))):"<div></div>"}</div>`:""; })()}<div class="grid2"><button class="btn primary" data-act="rfLink" data-id="${o.id}">Rattacher</button><button class="btn" data-act="rfKeep" data-id="${o.id}">C'est un revenu</button></div></div>`;
   return h+`<p class="note">Chaque remboursement rattaché est déduit de sa catégorie (jauges, dépenses variables, prévisions) au lieu de compter comme un revenu.</p>`+pl.map(p=>row(p,true)).join("")+tx.map(t=>row(t,false)).join(""); }
 /* ---- arbre des dépenses prévues ---- */
 const pNid=(cat,sub,sub2)=>cat+"|"+(sub||"")+"|"+(sub2||"");
