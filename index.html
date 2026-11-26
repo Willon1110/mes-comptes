@@ -668,7 +668,7 @@ input.picker{cursor:pointer;caret-color:transparent}
   <div class="logo" aria-hidden="true">mc</div>
   <div style="flex:1">
     <div class="app">Mes Comptes</div>
-    <div class="ver">v5.10 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
+    <div class="ver">v5.11 · <span class="dot" id="syncdot"></span><span id="synctxt">Chargement…</span></div>
   </div>
   <button class="alertbtn" id="alertbtn" data-act="openAlerts" hidden aria-label="Points à vérifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.01"/></svg><span class="ab" id="alertn">0</span></button>
   <button class="histbtn prevbtn" data-act="openPrevSpace" aria-label="Prévisions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9 10h6M9 14h6M9 18h3"/></svg><i class="pdot" id="prevdot" hidden></i></button>
@@ -696,7 +696,7 @@ input.picker{cursor:pointer;caret-color:transparent}
 
 <script>
 "use strict";
-const VERSION = "5.10";
+const VERSION = "5.11";
 const LOCAL_ONLY=false, LOCAL_KEY="mcl.data";
 let PERSONS = [["famille","Famille"],["william","William"],["ingrid","Ingrid"],["leonard","Léonard"],["autre","Autre"]];
 const MEMBER_COLORS=["#C2603A","#C98F33","#6F8B4E","#4F6D8A","#8A4F6D","#3F8A86","#B85C8A","#5E7F3A"];
@@ -2207,7 +2207,7 @@ function subGroups(c,cat,sub,txs){ // par sous-catégorie (sub null) ou par pré
   const out=list.filter(x=>g[x.id]&&(g[x.id].p||g[x.id].a)).map(x=>Object.assign(g[x.id],{name:x.name}));
   const budg=out.some(x=>x.p>0);
   if(budg){ const rest=get(""); out.forEach(x=>{ if(!(x.p>0)){ x.inRest=true; rest.a+=x.a; } }); out.forEach(x=>{ if(x.inRest) x.scale=Math.max(rest.p,x.a,1); }); }
-  if(g[""]&&(g[""].p||g[""].a)) out.push(Object.assign(g[""],{name:sub?"Sans précision":"Reste de la catégorie"}));
+  if(g[""]&&(g[""].p||g[""].a)) out.push(Object.assign(g[""],{name:sub?"Autres dépenses "+((subOf(cat,sub)||{}).name||""):"Autres dépenses "+cat}));
   return out; }
 function subGauge(g,canOpen,open,simple){
   let pct=g.p>0?g.a/g.p:0, col=pct>1?"var(--neg)":pct>.85?"var(--ochre)":"var(--pos)";
@@ -3456,7 +3456,7 @@ function prevTree(s,opt){ opt=opt||{};
   const ym=s.ym, d=s.d, c=calcMonth(ym), pc=calcMonth(addMonths(ym,-1)), open=opt.allOpen?new Proxy({}, {get:()=>1}):(s.open||(s.open={})), rows=prevRows(ym,"depenses").filter(r=>!opt.onlyVar||r.nat!=="fixe");
   s.tot={}; s.take={};
   const byNode={}; rows.forEach(r=>{ const k=pValidNid(r); (byNode[k]=byNode[k]||[]).push(r); });
-  const act={}; pc.tx.filter(t=>t.kind==="expense"&&isVarExp(t)&&!t.rf).forEach(t=>{ const k=pValidNid(t), o=act[k]=act[k]||{}, cu=curOf(t.acc); o["a:"+t.acc]=(o["a:"+t.acc]||0)+t.amount; o["c:"+cu]=(o["c:"+cu]||0)+t.amount; });
+  const act={}; pc.tx.filter(t=>t.kind==="expense"&&isVarExp(t)&&!t.rf).forEach(t=>{ const k=pValidNid(t), o=act[k]=act[k]||{}, cu=curOf(t.acc); o["a:"+t.acc]=(o["a:"+t.acc]||0)+t.amount; o["c:"+cu]=(o["c:"+cu]||0)+t.amount; o.eur=(o.eur||0)+conv(t.amount,cu,pc.rA); });
   const fxAct=id=>{ const r=pc.pointRows.find(x=>x.o.p.id===id&&x.done); return r?r.actual:0; };
   const cats=cfg.categories.filter(x=>catType(x)==="expense"&&(!opt.cat||x.name===opt.cat)); if(!opt.cat) rows.forEach(r=>{ if(!catByName(r.cat)&&!cats.some(x=>x.name===r.cat)) cats.push({name:r.cat,subs:[],ghost:true}); });
   const editable=C=>!C.ghost&&catUse(C)!=="fixe"&&C.special!=="birthday"&&C.special!=="christmas";
@@ -3471,16 +3471,22 @@ function prevTree(s,opt){ opt=opt||{};
   function build(C,sub,sub2,label,level){ const n={id:pNid(C.name,sub,sub2),C,label,level,kids:[]};
     if(!sub&&!C.ghost) (C.subs||[]).forEach(x=>n.kids.push(build(C,x.id,"",x.name,level+1)));
     else if(sub&&!sub2){ const so=subOf(C.name,sub); ((so&&Array.isArray(so.subs))?so.subs:[]).forEach(x=>n.kids.push(build(C,sub,x.id,x.name,level+1))); }
-    n.kids=n.kids.filter(k=>k.all.length); n.lines=linesOf(C,sub,sub2); n.all=n.lines.concat(...n.kids.map(k=>k.all)); return n; }
+    n.kids=n.kids.filter(k=>k.all.length); n.lines=linesOf(C,sub,sub2);
+    const own=n.lines.filter(l=>!l.fixed&&!(l.sign<0));
+    n.budg=own.some(l=>!l.ph||String(d["e:"+l.key]??"").trim()!=="")||n.kids.some(k=>k.budg);
+    const unb=n.kids.filter(k=>!k.budg); n.roll=((act[n.id]||{}).eur||0)+unb.reduce((x,k)=>x+k.roll,0);
+    if(own.length===1&&own[0].cur==="EUR"&&unb.length){ own[0].gray=n.roll; unb.forEach(k=>k.all.forEach(l=>{ if(!l.fixed&&!(l.sign<0)) l.cov=true; })); }
+    n.whole=n.kids.length>0&&!n.kids.some(k=>k.budg);
+    n.all=n.lines.concat(...n.kids.map(k=>k.all)); return n; }
   const lineHtml=(l,label,lv)=>prevLineHtml(d,l,label,lv);
   const tot=n=>n.all.reduce((x,l)=>x+conv(prevLineVal(d,l),l.cur,c.rP),0);
   function rn(n,catName){ s.tot[n.id]=n.all.map(l=>({key:l.key,fb:l.fb,cur:l.cur,sign:l.sign}));
     const hasKids=n.kids.length>0;
     if(n.level>0&&!hasKids&&n.lines.length===1) return lineHtml(n.lines[0],n.label,n.level);
-    const isOpen=!!open[n.id], takes=n.all.filter(l=>!(l.r&&l.r.skipped)&&String(d["e:"+l.key]??"").trim()===""&&l.gray>0.004);
+    const isOpen=!!open[n.id], takes=n.all.filter(l=>!l.cov&&!(l.r&&l.r.skipped)&&String(d["e:"+l.key]??"").trim()===""&&l.gray>0.004);
     if(n.level===0) s.take[n.C.name]=takes.map(l=>[l.key,r2(l.gray)]);
     let h=`<div class="tn ${isOpen?"open":""} l${n.level}" style="--lv:${n.level}" data-act="prevNode" data-id="${esc(n.id)}" role="button" tabindex="0" aria-expanded="${isOpen}"><span class="chev">${I.right}</span><span class="nm">${esc(n.label)}</span>${n.level===0&&isOpen&&takes.length?`<button class="take" data-act="prevTakeAll" data-cat="${esc(n.C.name)}">Tout reprendre</button>`:""}<b data-ptot="${esc(n.id)}">${fmt(tot(n),"EUR")}</b></div>`;
-    if(isOpen){ n.lines.forEach((l,i)=>{ const lbl=l.sign<0?"Remboursement attendu"+(l.r&&l.r.label&&!/^rembours/i.test(l.r.label)?" · "+l.r.label:""):l.fixed&&l.r?l.r.label:hasKids?`Reste de ${n.label}`:n.level===0?`Budget ${n.label}`:n.label; h+=lineHtml(l,lbl,n.level+1); }); n.kids.forEach(k=>{ h+=rn(k); }); }
+    if(isOpen){ n.lines.forEach((l,i)=>{ const lbl=l.sign<0?"Remboursement attendu"+(l.r&&l.r.label&&!/^rembours/i.test(l.r.label)?" · "+l.r.label:""):l.fixed&&l.r?l.r.label:hasKids?(n.whole?`Budget ${n.label} · tout compris`:`Autres dépenses ${n.label}`):n.level===0?`Budget ${n.label}`:n.label; h+=lineHtml(l,lbl,n.level+1); }); n.kids.forEach(k=>{ h+=rn(k); }); }
     return h; }
   const nodes=cats.map(C=>build(C,"","",C.name,0)).filter(n=>n.all.length);
   return nodes.length?`<div class="card ptree">${nodes.map(n=>rn(n)).join("")}</div>`:`<p class="note">Aucune catégorie de dépense.</p>`;
